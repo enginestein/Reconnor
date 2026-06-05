@@ -1,10 +1,10 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="reconner",
+    name="reconnor",
     version="1.0.0",
     description="Educational Hacking & OSINT Suite - A collection of security analysis tools",
-    url="https://github.com/enginestein/reconner",
+    url="https://github.com/enginestein/reconnor",
     packages=find_packages(),
     py_modules=["main"],
     install_requires=[
@@ -16,7 +16,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "reconner=main:main",
+            "reconnor=main:main",
         ],
     },
     python_requires=">=3.8",

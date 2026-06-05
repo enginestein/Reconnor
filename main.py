@@ -68,7 +68,7 @@ EXAMPLES:
 
 def build_parser():
     parser = argparse.ArgumentParser(
-        prog="reconner",
+        prog="reconnor",
         description="Educational Hacking & OSINT Suite - A collection of custom-built security analysis tools",
         epilog=EPILOG,
         formatter_class=argparse.RawDescriptionHelpFormatter,

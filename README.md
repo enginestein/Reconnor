@@ -1,4 +1,4 @@
-# Hacking Suite Wiki
+# Reconnor Wiki
 
 ## Overview
 
@@ -43,7 +43,7 @@ python3 main.py robots example.com --ollama-model llama3.2
 python3 main.py shodan example.com --ollama-model llama3.2
 ```
 
-See [tools/ollama-integration.md](tools/ollama-integration.md) for details.
+See [wiki/ollama-integration.md](wiki/ollama-integration.md) for details.
 
 ---
 
@@ -54,64 +54,70 @@ Tools to gather information about a target.
 
 | Tool | Description |
 |------|-------------|
-| [subdomain](tools/subdomain.md) | Discover subdomains via brute force |
-| [dns](tools/dns.md) | DNS enumeration and record discovery |
-| [certsearch](tools/certsearch.md) | Certificate Transparency log search |
-| [reverseip](tools/reverseip.md) | Find domains on same IP |
-| [whois](tools/whois.md) | WHOIS domain/IP lookups |
-| [asn](tools/asn.md) | ASN and network range lookup |
-| [geoip](tools/geoip.md) | IP geolocation |
-| [cve](tools/cve.md) | CVE vulnerability search |
-| [github](tools/github.md) | GitHub OSINT (users, repos, code) |
-| [username](tools/username.md) | Username search across 100+ platforms |
-| [breach](tools/breach.md) | Data breach checker |
-| [cloud](tools/cloud.md) | Cloud service enumeration |
-| [smtp](tools/smtp.md) | SMTP server enumeration |
-| [shodan](tools/shodan.md) | Shodan.io device and service search |
-| [mac-address](tools/mac-address.md) | MAC address vendor/OUI lookup |
+| [subdomain](wiki/subdomain.md) | Discover subdomains via brute force |
+| [dns](wiki/dns.md) | DNS enumeration and record discovery |
+| [certsearch](wiki/certsearch.md) | Certificate Transparency log search |
+| [reverseip](wiki/reverseip.md) | Find domains on same IP |
+| [whois](wiki/whois.md) | WHOIS domain/IP lookups |
+| [asn](wiki/asn.md) | ASN and network range lookup |
+| [geoip](wiki/geoip.md) | IP geolocation |
+| [cve](wiki/cve.md) | CVE vulnerability search |
+| [github](wiki/github.md) | GitHub OSINT (users, repos, code) |
+| [username](wiki/username.md) | Username search across 100+ platforms |
+| [breach](wiki/breach.md) | Data breach checker |
+| [cloud](wiki/cloud.md) | Cloud service enumeration |
+| [smtp](wiki/smtp.md) | SMTP server enumeration |
+| [shodan](wiki/shodan.md) | Shodan.io device and service search |
+| [mac-address](wiki/mac-address.md) | MAC address vendor/OUI lookup |
+| [deep-search](wiki/deep-search.md) | Cross-engine deep internet search |
+| [email-finder](wiki/email-finder.md) | Find email addresses from a domain |
+| [email-recon](wiki/email-recon.md) | Full email intelligence and breach check |
+| [pastewatch](wiki/pastewatch.md) | Pastebin monitoring and leak detection |
+| [phone-info](wiki/phone-info.md) | Phone number intelligence and carrier lookup |
+| [phone-social](wiki/phone-social.md) | Find social accounts linked to a phone number |
+| [tor-check](wiki/tor-check.md) | Tor/dark web reconnaissance |
 
 ### 2. Website Analysis
 Tools to analyze websites and web technologies.
 
 | Tool | Description |
 |------|-------------|
-| [tech](tools/tech.md) | Detect web technologies (CMS, frameworks, CDN, etc.) |
-| [headers](tools/headers.md) | HTTP security header analysis |
-| [ssl](tools/ssl.md) | SSL/TLS certificate inspection |
-| [waf](tools/waf.md) | WAF detection (30+ signatures) |
-| [crawl](tools/crawl.md) | Recursive website crawler |
-| [links](tools/links.md) | Link extraction and health check |
-| [email](tools/email.md) | Email address extraction |
-| [sociallinks](tools/sociallinks.md) | Social media link extraction |
-| [forms](tools/forms.md) | HTML form security analysis |
-| [js](tools/js.md) | JavaScript endpoint/secret extraction |
-| [wayback](tools/wayback.md) | Wayback Machine historical URLs |
-| [dork](tools/dork.md) | Google dork query generator |
-| [robots](tools/robots.md) | Robots.txt and sitemap.xml recon analyzer |
-| [favicon](tools/favicon.md) | Favicon hash calculator for Shodan |
-| [redirects](tools/redirects.md) | HTTP redirect chain analyzer |
+| [tech](wiki/tech.md) | Detect web technologies (CMS, frameworks, CDN, etc.) |
+| [headers](wiki/headers.md) | HTTP security header analysis |
+| [ssl](wiki/ssl.md) | SSL/TLS certificate inspection |
+| [waf](wiki/waf.md) | WAF detection (30+ signatures) |
+| [crawl](wiki/crawl.md) | Recursive website crawler |
+| [links](wiki/links.md) | Link extraction and health check |
+| [email](wiki/email.md) | Email address extraction |
+| [sociallinks](wiki/sociallinks.md) | Social media link extraction |
+| [forms](wiki/forms.md) | HTML form security analysis |
+| [js](wiki/js.md) | JavaScript endpoint/secret extraction |
+| [wayback](wiki/wayback.md) | Wayback Machine historical URLs |
+| [dork](wiki/dork.md) | Google dork query generator |
+| [robots](wiki/robots.md) | Robots.txt and sitemap.xml recon analyzer |
+| [favicon](wiki/favicon.md) | Favicon hash calculator for Shodan |
+| [redirects](wiki/redirects.md) | HTTP redirect chain analyzer |
 
 ### 3. Web Security Testing
 Tools to identify security vulnerabilities.
 
 | Tool | Description |
 |------|-------------|
-| [port-scan](tools/port-scan.md) | TCP port scanner with banner grab |
-| [dir-bust](tools/dir-bust.md) | Directory/file brute force |
-| [fuzz](tools/fuzz.md) | URL and parameter fuzzing |
-| [httpmethods](tools/httpmethods.md) | HTTP method enumeration |
-| [cors](tools/cors.md) | CORS misconfiguration checker |
-| [sqli](tools/sqli.md) | SQL injection scanner |
-| [xss](tools/xss.md) | XSS vulnerability scanner |
-| [admin](tools/admin.md) | Admin panel finder |
-| [openredirect](tools/openredirect.md) | Open redirect checker |
+| [port-scan](wiki/port-scan.md) | TCP port scanner with banner grab |
+| [dir-bust](wiki/dir-bust.md) | Directory/file brute force |
+| [fuzz](wiki/fuzz.md) | URL and parameter fuzzing |
+| [httpmethods](wiki/httpmethods.md) | HTTP method enumeration |
+| [cors](wiki/cors.md) | CORS misconfiguration checker |
+| [sqli](wiki/sqli.md) | SQL injection scanner |
+| [xss](wiki/xss.md) | XSS vulnerability scanner |
+| [admin](wiki/admin.md) | Admin panel finder |
+| [openredirect](wiki/openredirect.md) | Open redirect checker |
 
 ### 4. File & Metadata Analysis
 
 | Tool | Description |
 |------|-------------|
-| [metadata](tools/metadata.md) | File metadata/EXIF extraction |
-| [link](tools/links.md) | Link analysis |
+| [metadata](wiki/metadata.md) | File metadata/EXIF extraction |
 
 ---
 
@@ -470,8 +476,64 @@ Tests URL parameters and forms with 12 XSS payloads and checks for reflection in
 python3 main.py xss https://example.com/page?q=test
 ```
 
----
+### deep-search
+**Cross-engine deep internet search.**  
+Searches across search engines for file types, code repositories, people, and generates dork queries.
 
+```
+python3 main.py deep-search "company name + credentials"
+```
+
+### email-finder
+**Find email addresses from a domain.**  
+Uses scraping, pattern guessing, and search engine queries.
+
+```
+python3 main.py email-finder example.com
+```
+
+### email-recon
+**Full email intelligence.**  
+Performs breach checks, social media presence lookup, search footprint analysis, and Gravatar lookup.
+
+```
+python3 main.py email-recon john@example.com
+```
+
+### pastewatch
+**Pastebin monitoring and leak detection.**  
+Searches paste sites for emails, domains, or keywords and monitors for new leaks.
+
+```
+python3 main.py pastewatch email@example.com
+python3 main.py pastewatch "company name + credentials"
+```
+
+### phone-info
+**Phone number intelligence.**  
+Looks up country, carrier, line type, location, and reputation for a phone number.
+
+```
+python3 main.py phone-info "+14155551234"
+```
+
+### phone-social
+**Social media finder for phone numbers.**  
+Finds social media and messaging accounts linked to a phone number.
+
+```
+python3 main.py phone-social "+14155551234"
+```
+
+### tor-check
+**Tor/dark web reconnaissance.**  
+Checks for .onion mirrors, exit node presence, and performs dark web searches.
+
+```
+python3 main.py tor-check example.com
+```
+
+---
 
 ### Tool Interface
 

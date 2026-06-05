@@ -10,7 +10,7 @@ def github_request(endpoint, timeout=15):
         resp = requests.get(
             url, timeout=timeout,
             headers={
-                "User-Agent": "Reconner-OSINT/1.0",
+                "User-Agent": "Reconnor-OSINT/1.0",
                 "Accept": "application/vnd.github.v3+json",
             },
         )
@@ -33,7 +33,7 @@ def search_github_code(query, timeout=15):
             f"https://api.github.com/search/code?q={query}",
             timeout=timeout,
             headers={
-                "User-Agent": "Reconner-OSINT/1.0",
+                "User-Agent": "Reconnor-OSINT/1.0",
                 "Accept": "application/vnd.github.v3+json",
             },
         )
@@ -50,7 +50,7 @@ def search_github_repos(query, timeout=15):
             f"https://api.github.com/search/repositories?q={query}&sort=stars&order=desc",
             timeout=timeout,
             headers={
-                "User-Agent": "Reconner-OSINT/1.0",
+                "User-Agent": "Reconnor-OSINT/1.0",
                 "Accept": "application/vnd.github.v3+json",
             },
         )

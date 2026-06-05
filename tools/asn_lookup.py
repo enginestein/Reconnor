@@ -30,7 +30,7 @@ def get_asn_via_bgpview(asn, timeout=15):
         resp = requests.get(
             f"https://api.bgpview.io/asn/{asn_num}",
             timeout=timeout,
-            headers={"User-Agent": "Reconner-OSINT/1.0"},
+            headers={"User-Agent": "Reconnor-OSINT/1.0"},
         )
         if resp.status_code == 200:
             data = resp.json().get("data", {})
@@ -54,7 +54,7 @@ def get_asn_ranges(asn, timeout=15):
         resp = requests.get(
             f"https://api.bgpview.io/asn/{asn_num}/prefixes",
             timeout=timeout,
-            headers={"User-Agent": "Reconner-OSINT/1.0"},
+            headers={"User-Agent": "Reconnor-OSINT/1.0"},
         )
         if resp.status_code == 200:
             data = resp.json().get("data", {})

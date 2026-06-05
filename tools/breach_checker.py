@@ -57,7 +57,7 @@ def check_hibp_password(password):
         resp = requests.get(
             f"https://api.pwnedpasswords.com/range/{prefix}",
             timeout=10,
-            headers={"User-Agent": "Reconner-OSINT/1.0"},
+            headers={"User-Agent": "Reconnor-OSINT/1.0"},
         )
         if resp.status_code == 200:
             for line in resp.text.split("\n"):
@@ -76,7 +76,7 @@ def check_hibp_email(email, timeout=15):
         resp = requests.get(
             f"https://api.pwnedpasswords.com/range/{prefix}",
             timeout=timeout,
-            headers={"User-Agent": "Reconner-OSINT/1.0"},
+            headers={"User-Agent": "Reconnor-OSINT/1.0"},
         )
         if resp.status_code == 200:
             return True
