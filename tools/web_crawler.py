@@ -3,6 +3,7 @@ from urllib.parse import urljoin, urlparse
 from collections import deque
 
 from utils.output import section, info, success, warning, error, result, table
+from utils.external_tools import gospider_crawl, hakrawler_crawl, find_tool
 
 try:
     import bs4
@@ -44,11 +45,35 @@ class WebCrawler:
     description = "Crawl a website to enumerate URLs and structure"
 
     @staticmethod
-    def run(target, depth=2, max_urls=100, timeout=10):
+    def run(target, depth=2, max_urls=100, timeout=10, ext=False):
         section(f"Web Crawler: {target}")
 
         if not target.startswith(("http://", "https://")):
             target = f"https://{target}"
+
+        if ext:
+            section("External Crawling Tools")
+            all_urls = set()
+
+            gs = gospider_crawl(target, depth)
+            if gs:
+                for url in gs:
+                    all_urls.add(url)
+                success(f"gospider found {len(gs)} URLs")
+
+            hk = hakrawler_crawl(target, depth)
+            if hk:
+                for url in hk:
+                    all_urls.add(url)
+                success(f"hakrawler found {len(hk)} URLs")
+
+            if all_urls:
+                section(f"Discovered URLs ({len(all_urls)})")
+                for url in sorted(all_urls)[:200]:
+                    info(f"  {url}")
+                if len(all_urls) > 200:
+                    info(f"... and {len(all_urls) - 200} more URLs")
+                return {"target": target, "urls": sorted(all_urls)}
 
         if not HAS_BS4:
             warning("beautifulsoup4 not installed. Install with: pip install beautifulsoup4")

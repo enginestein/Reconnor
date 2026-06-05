@@ -45,6 +45,41 @@ from tools.favicon_hash import FaviconHash
 from tools.redirect_tracker import RedirectTracker
 from tools.robots_analyzer import RobotsAnalyzer
 from tools.shodan_search import ShodanSearch
+from tools.malware_hunter import MalwareHunter
+from tools.c2_hunter import C2Hunter
+from tools.phish_hunter import PhishHunter
+from tools.telegram_osint import TelegramOSINT
+from tools.reddit_osint import RedditOSINT
+from tools.social_recon import SocialRecon
+from tools.auto_recon import AutoRecon
+from tools.jwt_toolkit import JwtToolkit
+from tools.ssrf_scanner import SsrfScanner
+from tools.takeover_checker import TakeoverChecker
+from tools.login_brute import LoginBrute
+from tools.report_gen import ReportGen
+from tools.graphql_scanner import GraphQLScanner
+from tools.api_fuzzer import APIFuzzer
+from tools.smuggler import Smuggler
+from tools.ws_tester import WebSocketTester
+from tools.race_condition import RaceCondition
+from tools.ssti_scanner import SSTIScanner
+from tools.xxe_scanner import XXEScanner
+from tools.network_scan import NetworkScan
+from tools.snmp_enum import SNMPEnum
+from tools.smb_enum import SMBEnum
+from tools.nfs_enum import NFSEnum
+from tools.ldap_scanner import LDAPScanner
+from tools.rpc_enum import RPCEnum
+from tools.cred_spray import CredSpray
+from tools.default_creds import DefaultCreds
+from tools.password_analyze import PasswordAnalyze
+from tools.hash_id import HashID
+from tools.aws_enum import AWSEnum
+from tools.k8s_audit import K8sAudit
+from tools.container_scan import ContainerScan
+from tools.cloud_metadata import CloudMetadata
+from tools.project_db import ProjectDB
+from tools.ai_chat import AIChat
 
 TOOLS = {
     "port-scan": PortScanner,
@@ -94,6 +129,42 @@ TOOLS = {
     "redirects": RedirectTracker,
     "robots": RobotsAnalyzer,
     "shodan": ShodanSearch,
+    "malware-hunt": MalwareHunter,
+    "c2-hunt": C2Hunter,
+    "phish-hunt": PhishHunter,
+    "telegram-osint": TelegramOSINT,
+    "reddit-osint": RedditOSINT,
+    "social-recon": SocialRecon,
+    "auto-recon": AutoRecon,
+
+    "jwt": JwtToolkit,
+    "ssrf": SsrfScanner,
+    "takeover": TakeoverChecker,
+    "brute": LoginBrute,
+    "report": ReportGen,
+    "graphql": GraphQLScanner,
+    "api-fuzz": APIFuzzer,
+    "smuggle": Smuggler,
+    "ws": WebSocketTester,
+    "race": RaceCondition,
+    "ssti": SSTIScanner,
+    "xxe": XXEScanner,
+    "net-scan": NetworkScan,
+    "snmp": SNMPEnum,
+    "smb": SMBEnum,
+    "nfs": NFSEnum,
+    "ldap": LDAPScanner,
+    "rpc": RPCEnum,
+    "cred-spray": CredSpray,
+    "default-creds": DefaultCreds,
+    "pass-analyze": PasswordAnalyze,
+    "hash-id": HashID,
+    "aws-enum": AWSEnum,
+    "k8s": K8sAudit,
+    "container": ContainerScan,
+    "cloud-meta": CloudMetadata,
+    "project": ProjectDB,
+    "ai-chat": AIChat,
 }
 
 HELP_DESCRIPTIONS = {
@@ -144,4 +215,40 @@ HELP_DESCRIPTIONS = {
     "redirects": "Trace and analyze HTTP redirect chains",
     "robots": "Analyze robots.txt and sitemap.xml for recon",
     "shodan": "Search Shodan.io for devices, services, and open ports",
+    "malware-hunt": "Multi-source malware URL & IOC hunter: URLhaus, ThreatFox, MalwareBazaar, Feodo, URLScan",
+    "c2-hunt": "C2 infrastructure reconnaissance: blocklists, SSL fingerprints, panel discovery, ThreatFox",
+    "phish-hunt": "Phishing infrastructure hunter: URLScan phishing search, cert monitoring, kit discovery, dorking",
+    "telegram-osint": "Telegram OSINT: channel/group intelligence, message analysis, forward tracking, activity patterns",
+    "reddit-osint": "Reddit OSINT: user profile analysis, subreddit recon, content tracking, cross-post detection",
+    "social-recon": "Cross-platform social media recon: 60+ platforms, profile discovery, metadata extraction, correlation",
+    "auto-recon": "Autonomous recon orchestration with AI-driven decision making and chained tool execution",
+
+    "jwt": "JWT analysis and attack toolkit (decode, crack, algorithm confusion, KID injection)",
+    "ssrf": "Blind and reflected SSRF detection with out-of-band verification and cloud metadata probing",
+    "takeover": "Subdomain takeover detection (AWS, Azure, GitHub, Heroku, Netlify, 20+ services)",
+    "brute": "HTTP form/basic/digest authentication brute forcer with auto field detection",
+    "report": "Generate HTML/JSON/text pentest reports from JSON output files",
+    "graphql": "GraphQL security scanner: introspection, batching attacks, query depth, auth bypass",
+    "api-fuzz": "Advanced REST/GraphQL API fuzzer: header injection, param pollution, rate limit testing",
+    "smuggle": "HTTP request smuggler: CL.TE, TE.CL, TE.TE detection and exploitation",
+    "ws": "WebSocket security tester: origin bypass, message fuzzing, DoS resistance",
+    "race": "Race condition tester: concurrent request racing for discount, OTP, rate-limit bypass",
+    "ssti": "SSTI scanner: Jinja2, Twig, Freemarker, Velocity, Jade, ERB, Tornado, Mako, Smarty",
+    "xxe": "XXE scanner: file read, SSRF, blind exfiltration, 9 DOCTYPE variants including XInclude and SVG",
+    "net-scan": "Network scanner: ARP discovery, ping sweep, OS fingerprinting, port scanning",
+    "snmp": "SNMP enumerator: community string brute force, MIB tree walk, interface/user extraction",
+    "smb": "SMB enumerator: share listing, null session, OS version, RID cycle user enum",
+    "nfs": "NFS enumerator: export listing, mount checking, permission analysis, rpcbind query",
+    "ldap": "LDAP scanner: anonymous bind, attribute discovery, user/group dump, DN enumeration",
+    "rpc": "RPC enumerator: endpoint mapper dump, service discovery, unusual port detection",
+    "cred-spray": "Credential sprayer: password spraying with anti-lockout detection and cooldown",
+    "default-creds": "Default credential checker: 500+ known device/service defaults",
+    "pass-analyze": "Password strength analyzer: entropy, patterns, crack time estimation",
+    "hash-id": "Hash identifier and cracker: 50+ hash types, wordlist/rainbow table cracking",
+    "aws-enum": "AWS enumeration: IAM/S3/EC2/STS checks, bucket discovery, metadata probing",
+    "k8s": "Kubernetes security audit: RBAC, dashboard, etcd, kubelet, API server, pod/secret exposure",
+    "container": "Container security scanner: Docker API, breakout tests, image vulnerability check",
+    "cloud-meta": "Cloud metadata exposure scanner: AWS, Azure, GCP, Alibaba, DigitalOcean, OpenStack",
+    "project": "Project database: SQLite-backed target/project management with scan comparison",
+    "ai-chat": "Interactive AI chat that runs recon/scanning tools autonomously using natural language",
 }

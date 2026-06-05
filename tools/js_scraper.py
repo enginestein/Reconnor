@@ -5,6 +5,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from utils.output import section, info, success, warning, error, result, table
 from utils.ollama_helper import OllamaHelper
+from utils.external_tools import subjs_scan, linkfinder_scan
 
 JS_URL_PATTERN = re.compile(r'(?:src|href)=["\']([^"\']+\.js(?:\?[^"\']*)?)["\']', re.IGNORECASE)
 API_PATTERN = re.compile(r'(?:api|v1|v2|v3|rest|graphql|endpoint|webhook)/[a-zA-Z0-9_\-/]+', re.IGNORECASE)
@@ -36,13 +37,32 @@ class JSScraper:
     description = "Extract API endpoints, secrets, and routes from JavaScript files"
 
     @staticmethod
-    def run(target, threads=20, ollama_model=None):
+    def run(target, threads=20, ollama_model=None, ext=False):
         section(f"JavaScript Scraper: {target}")
 
         ollama = OllamaHelper(model=ollama_model) if ollama_model else None
 
         if not target.startswith(("http://", "https://")):
             target = f"https://{target}"
+
+        ext_js_urls = set()
+        ext_endpoints = set()
+
+        if ext:
+            section("External JS Discovery Tools")
+            sj = subjs_scan(target)
+            if sj:
+                ext_js_urls.update(sj)
+                success(f"subjs found {len(sj)} JS files")
+
+            lf = linkfinder_scan(target)
+            if lf:
+                for ep in lf:
+                    if ep.startswith("/"):
+                        ext_endpoints.add(ep)
+                    elif ep.startswith("http"):
+                        ext_js_urls.add(ep)
+                success(f"linkfinder found {len(lf)} endpoints/files")
 
         try:
             resp = requests.get(
@@ -56,7 +76,7 @@ class JSScraper:
             error(f"Failed to fetch page: {e}")
             return {"target": target, "error": str(e)}
 
-        js_urls = []
+        js_urls = list(ext_js_urls)
         for match in JS_URL_PATTERN.finditer(html):
             js_path = match.group(1)
             full_url = urljoin(base_url, js_path)
@@ -153,13 +173,19 @@ class JSScraper:
                         success(f"  {ep}")
                         found_endpoints.add(ep)
 
-        if not any([found_endpoints, found_secrets, found_routes]):
+        all_endpoints = found_endpoints.union(ext_endpoints)
+        if ext_endpoints:
+            section(f"External Endpoints ({len(ext_endpoints)})")
+            for ep in sorted(ext_endpoints)[:30]:
+                success(ep)
+
+        if not any([all_endpoints, found_secrets, found_routes]):
             warning("No endpoints, secrets, or routes found in JavaScript")
 
         return {
             "target": target,
             "js_files": len(js_urls),
-            "endpoints": sorted(found_endpoints),
+            "endpoints": sorted(all_endpoints),
             "secrets": sorted(found_secrets)[:20],
             "routes": sorted(found_routes),
         }

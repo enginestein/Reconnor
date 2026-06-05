@@ -2,6 +2,7 @@ import socket
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from utils.output import section, info, success, warning, error, result, table
+from utils.external_tools import nmap_scan, find_tool
 
 COMMON_PORTS = {
     21: "FTP", 22: "SSH", 23: "Telnet", 25: "SMTP", 53: "DNS",
@@ -23,7 +24,6 @@ COMMON_PORTS = {
     27017: "MongoDB", 50070: "HDFS", 61616: "ActiveMQ",
 }
 
-SERVICE_PORTS = {v: k for k, v in COMMON_PORTS.items()}
 
 
 def grab_banner(host, port, timeout=3):
@@ -66,8 +66,26 @@ class PortScanner:
     description = "Scan open ports on a target host"
 
     @staticmethod
-    def run(target, ports=None, timeout=2, threads=100):
+    def run(target, ports=None, timeout=2, threads=100, nmap=False):
         section(f"Port Scan: {target}")
+
+        if nmap:
+            section("Nmap Service/Version Detection")
+            if not find_tool("nmap"):
+                warning("nmap not found. Install with: apt install nmap")
+            else:
+                nmap_results = nmap_scan(target, ports)
+                if nmap_results:
+                    success(f"nmap found {len(nmap_results)} open port(s):")
+                    table(
+                        ["PORT", "STATE", "SERVICE", "VERSION"],
+                        [(f"{p}/tcp", "open", svc, ver) for p, svc, ver, _ in nmap_results]
+                    )
+                    info("nmap scan complete")
+                    return {"target": target, "nmap_results": nmap_results}
+                else:
+                    warning("nmap returned no results (may need root)")
+            info("Falling back to built-in scanner...")
 
         port_list = []
         if ports:

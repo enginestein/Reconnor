@@ -3,6 +3,7 @@ import requests
 from urllib.parse import urljoin
 
 from utils.output import section, info, success, warning, error, result, table
+from utils.external_tools import whatweb_detect
 
 TECH_SIGNATURES = {
     "WordPress": {
@@ -901,11 +902,23 @@ class TechDetector:
     description = "Detect technologies used on a website"
 
     @staticmethod
-    def run(target):
+    def run(target, ext=False):
         section(f"Technology Detector: {target}")
 
         if not target.startswith(("http://", "https://")):
             target = f"https://{target}"
+
+        if ext:
+            section("External Tech Detection (whatweb)")
+            whatweb_results = whatweb_detect(target)
+            if whatweb_results:
+                success(f"whatweb detected {len(whatweb_results)} technologies:")
+                for tech, version in whatweb_results:
+                    result(tech, version)
+                return {"target": target, "technologies": whatweb_results}
+            else:
+                warning("whatweb not available or returned no results")
+            info("Falling back to built-in detector...")
 
         try:
             resp = requests.get(

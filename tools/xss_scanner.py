@@ -291,10 +291,6 @@ class AdvancedXSSScanner:
 
                             AdvancedXSSScanner.check_reflection(resp2.text, payload, param, payload_name, context_name, all_results)
 
-                            if context_name in ("waf_bypass", "polyglot"):
-                                for pattern, db in ERROR_PATTERNS if False else []:
-                                    pass
-
                         except Exception as e:
                             error(f"[{param}] [{payload_name}] Error: {e}")
         else:

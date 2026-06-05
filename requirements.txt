@@ -3,3 +3,11 @@ beautifulsoup4>=4.11.0
 colorama>=0.4.6
 Pillow>=9.0.0
 dnspython>=2.3.0
+cryptography>=3.4.0
+pysocks>=1.7.1
+
+# Optional: pip-installable external tools (install via: pip install .[ext])
+# sublist3r
+# wafw00f
+# dnsrecon
+# linkfinder

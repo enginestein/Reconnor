@@ -1,0 +1,45 @@
+{
+    "providers": {
+        "llm": {
+            "default": "ollama",
+            "ollama": {
+                "model": "llama3.2",
+                "host": "http://localhost:11434"
+            },
+            "openai": {
+                "model": "gpt-4o-mini",
+                "api_key": "${OPENAI_API_KEY}",
+                "base_url": "https://api.openai.com/v1"
+            },
+            "anthropic": {
+                "model": "claude-3-haiku-20240307",
+                "api_key": "${ANTHROPIC_API_KEY}"
+            },
+            "gemini": {
+                "model": "gemini-1.5-flash",
+                "api_key": "${GEMINI_API_KEY}"
+            }
+        },
+        "shodan": {
+            "api_key": "${SHODAN_API_KEY}"
+        },
+        "github": {
+            "api_key": "${GITHUB_API_KEY}"
+        }
+    },
+    "defaults": {
+        "timeout": 15,
+        "threads": 50,
+        "proxy": "",
+        "output_format": "terminal",
+        "auto_json": false
+    },
+    "plugins": {
+        "directory": "~/.reconnor/plugins",
+        "enabled": []
+    },
+    "reports": {
+        "default_format": "html",
+        "output_dir": "."
+    }
+}

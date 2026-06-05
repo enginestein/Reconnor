@@ -3,7 +3,7 @@ import requests
 from utils.output import info, warning, error, section
 
 OLLAMA_DEFAULT_HOST = "http://localhost:11434"
-OLLAMA_DEFAULT_MODEL = "llama3.2"
+OLLAMA_DEFAULT_MODEL = "dolphin3:8b"
 
 
 class OllamaHelper:

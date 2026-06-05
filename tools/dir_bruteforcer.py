@@ -4,6 +4,7 @@ from urllib.parse import urljoin
 
 from utils.output import section, info, success, warning, error, table
 from utils.ollama_helper import OllamaHelper
+from utils.external_tools import ffuf_dir_bust, gobuster_dir_bust, find_tool
 
 COMMON_PATHS = [
     "admin", "login", "wp-admin", "administrator", "backup", "backups",
@@ -192,11 +193,36 @@ class DirBruteforcer:
     description = "Brute force directories and files on a web server"
 
     @staticmethod
-    def run(target, wordlist=None, extensions=False, threads=30, timeout=10, ollama_model=None):
+    def run(target, wordlist=None, extensions=False, threads=30, timeout=10, ollama_model=None, ext=False):
         section(f"Directory Brute Forcing: {target}")
 
         if not target.startswith(("http://", "https://")):
             target = f"https://{target}"
+
+        found = []
+        ext_used = set()
+
+        if ext:
+            section("External Directory Tools")
+            ext_wordlist = wordlist
+            if not ext_wordlist:
+                warning("Use --wordlist <file> with --ext for external tools to be effective")
+
+            if ext_wordlist:
+                ffuf_results = ffuf_dir_bust(target, ext_wordlist)
+                if ffuf_results:
+                    for code, path, size, url in ffuf_results:
+                        found.append((code, path, size, url))
+                        ext_used.add(path)
+                    success(f"ffuf found {len(ffuf_results)} paths")
+
+                gobuster_results = gobuster_dir_bust(target, ext_wordlist)
+                if gobuster_results:
+                    for code, path, size, url in gobuster_results:
+                        if path not in ext_used:
+                            found.append((code, path, size, url))
+                            ext_used.add(path)
+                    success(f"gobuster found {len(gobuster_results)} paths")
 
         ollama = OllamaHelper(model=ollama_model) if ollama_model else None
 
@@ -243,14 +269,14 @@ class DirBruteforcer:
 
         info(f"Checking {len(paths)} paths on {target}...")
 
-        found = []
         with ThreadPoolExecutor(max_workers=threads) as executor:
             futures = {executor.submit(check_path, target, p, timeout): p for p in paths}
             for future in as_completed(futures):
                 res = future.result()
                 if res:
                     path, code, size, url = res
-                    found.append((code, path, size, url))
+                    if path not in ext_used:
+                        found.append((code, path, size, url))
                     code_str = str(code)
                     if code in [200, 201, 204]:
                         success(f"[{code}] {path} ({size} bytes)")

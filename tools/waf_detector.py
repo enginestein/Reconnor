@@ -1,5 +1,6 @@
 import requests
 from utils.output import section, info, success, warning, error, result, table
+from utils.external_tools import wafw00f_detect
 
 WAF_SIGNATURES = [
     {
@@ -251,11 +252,23 @@ class WAFDetector:
     description = "Detect Web Application Firewalls and reverse proxies"
 
     @staticmethod
-    def run(target):
+    def run(target, ext=False):
         section(f"WAF Detection: {target}")
 
         if not target.startswith(("http://", "https://")):
             target = f"https://{target}"
+
+        if ext:
+            section("External WAF Detection (wafw00f)")
+            wafw00f_results = wafw00f_detect(target)
+            if wafw00f_results:
+                success(f"wafw00f detected {len(wafw00f_results)} WAF(s):")
+                for name, details in wafw00f_results:
+                    result(name, details)
+                return {"target": target, "waf": wafw00f_results}
+            else:
+                warning("wafw00f not available or returned no results")
+            info("Falling back to built-in WAF detector...")
 
         normal_resp, probes = probe_waf(target)
         if normal_resp is None:

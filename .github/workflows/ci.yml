@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install flake8 mypy
+      - name: Lint with flake8
+        run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+      - name: Check imports
+        run: python3 -c "from tools import TOOLS; print(f'{len(TOOLS)} tools registered')"
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run basic import test
+        run: python3 -c "
+          from tools import TOOLS;
+          for name, cls in TOOLS.items():
+              assert hasattr(cls, 'run'), f'{name} missing run()'
+              assert hasattr(cls, 'description'), f'{name} missing description'
+          print(f'All {len(TOOLS)} tools validated')
+          "
+      - name: Test argument parsing
+        run: python3 -c "
+          from main import build_parser;
+          p = build_parser();
+          for name in TOOLS:
+              args = p.parse_args([name, '--help'])
+          print('All parsers valid')
+          "
+
+  docker:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build Docker image
+        run: docker build -t reconnor .

@@ -2,7 +2,7 @@ import socket
 import subprocess
 import re
 
-from utils.output import section, info, success, warning, error, result
+from utils.output import section, info, success, warning, error, result, QUIET
 
 
 def whois_via_socket(domain):
@@ -96,7 +96,8 @@ class WhoisLookup:
 
         if is_ip:
             info(f"WHOIS data for IP {target}:")
-            print(data[:2000])
+            if not QUIET:
+                print(data[:2000])
         else:
             parsed = parse_whois_basic(data)
             if parsed:
@@ -108,6 +109,7 @@ class WhoisLookup:
                     else:
                         result(key.rstrip(":"), val)
                 info("\nRaw WHOIS output also available below:")
-            print(data[:3000])
+            if not QUIET:
+                print(data[:3000])
 
         return {"target": target, "raw": data[:3000]}

@@ -1,5 +1,6 @@
 import socket
 from utils.output import section, info, success, warning, error, result, table
+from utils.external_tools import dig_all_records, dnsrecon_enum, host_lookup, host_ptr, dig_zone_transfer, find_tool
 
 try:
     import dns.resolver
@@ -58,11 +59,61 @@ class DNSRecon:
     description = "DNS enumeration and reconnaissance"
 
     @staticmethod
-    def run(target, zone_transfer=False):
+    def run(target, zone_transfer=False, ext=False):
         if target.startswith(("http://", "https://")):
             from urllib.parse import urlparse
             target = urlparse(target).netloc or target
         section(f"DNS Reconnaissance: {target}")
+
+        if ext:
+            section("External DNS Tools")
+            dig_records = dig_all_records(target)
+            if dig_records:
+                for rtype, records in dig_records.items():
+                    success(f"{rtype} Records (dig):")
+                    for r in records[:5]:
+                        result("", r)
+                    if len(records) > 5:
+                        info(f"  ... and {len(records)-5} more")
+
+            dnsrecon = dnsrecon_enum(target)
+            if dnsrecon:
+                for rtype, records in dnsrecon.items():
+                    success(f"{rtype} Records (dnsrecon):")
+                    for r in records[:5]:
+                        result("", r)
+
+            host_records = host_lookup(target)
+            if host_records:
+                for rtype, records in host_records.items():
+                    success(f"{rtype} Records (host):")
+                    for r in records:
+                        result("", r)
+
+            if zone_transfer and find_tool("dig"):
+                section("Zone Transfer Attempt (dig)")
+                if dig_records and "NS" in dig_records:
+                    for ns in dig_records["NS"]:
+                        ns_clean = ns.rstrip(".")
+                        info(f"Attempting zone transfer on {ns_clean}...")
+                        xfer = dig_zone_transfer(target, ns_clean)
+                        if xfer:
+                            success(f"Zone transfer successful from {ns_clean}!")
+                            for r in xfer[:30]:
+                                info(f"  {r}")
+                        else:
+                            info(f"Zone transfer refused by {ns_clean}")
+
+            if find_tool("host"):
+                try:
+                    ip = socket.gethostbyname(target)
+                    ptr = host_ptr(ip)
+                    if ptr:
+                        success(f"PTR Record (host): {ptr}")
+                except:
+                    pass
+
+            return {"target": target}
 
         if not HAS_DNSPYTHON:
             warning("dnspython not installed - limited DNS resolution. Install with: pip install dnspython")

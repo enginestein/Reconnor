@@ -2,6 +2,7 @@ import socket
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from utils.output import section, info, success, warning, error, result, table
+from utils.external_tools import sublist3r_enum, amass_enum, assetfinder_enum
 
 COMMON_SUBDOMAINS = [
     "www", "mail", "admin", "blog", "dev", "test", "api", "app", "cdn",
@@ -507,13 +508,47 @@ class SubdomainFinder:
     description = "Discover subdomains of a target domain"
 
     @staticmethod
-    def run(target, wordlist=None, threads=50):
+    def run(target, wordlist=None, threads=50, ext=False):
         if target.startswith(("http://", "https://")):
             from urllib.parse import urlparse
             target = urlparse(target).netloc or target
         section(f"Subdomain Finder: {target}")
 
+        ext_found = {}
+        ext_names = set()
+
+        if ext:
+            section("External Subdomain Tools")
+
+            s3 = sublist3r_enum(target)
+            if s3:
+                for s in s3:
+                    s_clean = s.replace(f".{target}", "").strip()
+                    if s_clean:
+                        ext_names.add(s_clean)
+                success(f"sublist3r found {len(s3)} subdomains")
+
+            amass = amass_enum(target)
+            if amass:
+                for s in amass:
+                    s_clean = s.replace(f".{target}", "").strip()
+                    if s_clean:
+                        ext_names.add(s_clean)
+                success(f"amass found {len(amass)} subdomains")
+
+            af = assetfinder_enum(target)
+            if af:
+                for s in af:
+                    s_clean = s.replace(f".{target}", "").strip()
+                    if s_clean:
+                        ext_names.add(s_clean)
+                success(f"assetfinder found {len(af)} subdomains")
+
+            for name in ext_names:
+                ext_found[name] = {"ip": "?", "ptr": "-"}
+
         subdomains = COMMON_SUBDOMAINS.copy()
+        subdomains = [s for s in subdomains if s not in ext_names]
         if wordlist:
             try:
                 with open(wordlist) as f:
@@ -523,7 +558,7 @@ class SubdomainFinder:
             except FileNotFoundError:
                 error(f"Wordlist not found: {wordlist}")
 
-        info(f"Checking {len(subdomains)} subdomains of {target}...")
+        info(f"Brute-force checking {len(subdomains)} subdomains...")
 
         found = []
         with ThreadPoolExecutor(max_workers=threads) as executor:
@@ -535,13 +570,17 @@ class SubdomainFinder:
                     found.append((sub, ip, ptr))
                     success(f"{sub}.{target} -> {ip}")
 
-        if found:
-            success(f"Found {len(found)} subdomain(s):")
-            table(
-                ["SUBDOMAIN", "IP ADDRESS", "PTR RECORD"],
-                [(f"{sd}.{target}", ip, ptr if ptr else "-") for sd, ip, ptr in found]
-            )
+        all_results = dict(ext_found)
+        for sub, ip, ptr in found:
+            all_results[sub] = {"ip": ip, "ptr": ptr or "-"}
+
+        if all_results:
+            success(f"Total: {len(all_results)} subdomain(s):")
+            rows = [(f"{sd}.{target}", d["ip"], d["ptr"]) for sd, d in sorted(all_results.items())]
+            table(["SUBDOMAIN", "IP ADDRESS", "PTR RECORD"], rows)
+            if ext:
+                info("Note: IPs marked '?' are from external tools (resolve pending)")
         else:
             warning("No subdomains discovered")
 
-        return {"target": target, "subdomains": found}
+        return {"target": target, "subdomains": list(all_results.keys())}

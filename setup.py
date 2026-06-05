@@ -1,4 +1,6 @@
+import sys
 from setuptools import setup, find_packages
+
 
 setup(
     name="reconnor",
@@ -13,10 +15,28 @@ setup(
         "colorama>=0.4.6",
         "Pillow>=9.0.0",
         "dnspython>=2.3.0",
+        "cryptography>=3.4.0",
+        "pysocks>=1.7.1",
     ],
+    extras_require={
+        "ext": [
+            "sublist3r",
+            "wafw00f",
+            "dnsrecon",
+            "linkfinder",
+        ],
+        "all": [
+            "sublist3r",
+            "wafw00f",
+            "dnsrecon",
+            "linkfinder",
+        ],
+        "dev": ["pytest", "flake8"],
+    },
     entry_points={
         "console_scripts": [
             "reconnor=main:main",
+            "reconnor-setup=utils.install_deps:main",
         ],
     },
     python_requires=">=3.8",

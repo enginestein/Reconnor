@@ -12,6 +12,8 @@ RESULT = Fore.WHITE + Style.BRIGHT
 HIGHLIGHT = Fore.MAGENTA + Style.BRIGHT
 DIM = Style.DIM
 
+QUIET = False
+
 
 
 BANNER = f"""{Fore.RED}
@@ -34,37 +36,46 @@ DISCLAIMER = f"""
 
 
 def print_banner():
-    print(BANNER)
-    print(DISCLAIMER)
+    if not QUIET:
+        print(BANNER)
+        print(DISCLAIMER)
 
 
 def info(msg):
-    print(f"{INFO}[*] {msg}{Style.RESET_ALL}")
+    if not QUIET:
+        print(f"{INFO}[*] {msg}{Style.RESET_ALL}")
 
 
 def success(msg):
-    print(f"{SUCCESS}[+] {msg}{Style.RESET_ALL}")
+    if not QUIET:
+        print(f"{SUCCESS}[+] {msg}{Style.RESET_ALL}")
 
 
 def warning(msg):
-    print(f"{WARNING}[!] {msg}{Style.RESET_ALL}")
+    if not QUIET:
+        print(f"{WARNING}[!] {msg}{Style.RESET_ALL}")
 
 
 def error(msg):
-    print(f"{ERROR}[-] {msg}{Style.RESET_ALL}", file=sys.stderr)
+    if not QUIET:
+        print(f"{ERROR}[-] {msg}{Style.RESET_ALL}", file=sys.stderr)
 
 
 def section(msg):
-    print(f"\n{SECTION}{'=' * 60}{Style.RESET_ALL}")
-    print(f"{SECTION}  {msg}{Style.RESET_ALL}")
-    print(f"{SECTION}{'=' * 60}{Style.RESET_ALL}")
+    if not QUIET:
+        print(f"\n{SECTION}{'=' * 60}{Style.RESET_ALL}")
+        print(f"{SECTION}  {msg}{Style.RESET_ALL}")
+        print(f"{SECTION}{'=' * 60}{Style.RESET_ALL}")
 
 
 def result(label, value):
-    print(f"  {RESULT}{label}:{Style.RESET_ALL} {value}")
+    if not QUIET:
+        print(f"  {RESULT}{label}:{Style.RESET_ALL} {value}")
 
 
 def table(headers, rows):
+    if QUIET:
+        return
     col_widths = [len(h) for h in headers]
     for row in rows:
         for i, cell in enumerate(row):

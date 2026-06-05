@@ -1,8 +1,13 @@
-# Reconnor Wiki
+# Reconnor
 
 ## Overview
 
-A comprehensive, custom-built suite of 47 security research and OSINT (Open Source Intelligence) tools for educational purposes. All tools are standalone Python scripts with no external tool wrappers.
+A comprehensive, custom-built suite of 60 security research and OSINT (Open Source Intelligence) tools for educational purposes. All tools are standalone Python scripts with no external tool wrappers.
+
+> **Optional external tools** (nmap, amass, ffuf, etc.) can be enabled per-tool via `--nmap`/`--ext` flags.  
+> Run `reconnor-setup` to auto-install all system dependencies, or `pip install .[ext]` for pip-based tools.
+
+---
 
 ### Quick Start
 
@@ -20,27 +25,51 @@ python3 main.py port-scan example.com
 python3 main.py subdomain example.com
 ```
 
-### Dependencies
+### Installation
 
 ```bash
-pip install requests beautifulsoup4 colorama Pillow dnspython
+# Quick install (core Python deps only)
+pip install -r requirements.txt
+
+# Full install (includes pip-based external tools like sublist3r, wafw00f)
+pip install .[ext]
+
+# Install all system-level dependencies (nmap, amass, ffuf, etc.)
+reconnor-setup
 ```
 
 ---
 
-## AI-Assisted Mode (Ollama)
+## AI-Assisted Mode
 
-11 tools support local LLM integration via [Ollama](https://ollama.ai) for smarter analysis and payload generation.
+The suite supports **multi-provider LLM integration** for smarter analysis and payload generation.
 
+| Provider | Env Variable | Default Model |
+|----------|-------------|---------------|
+| [Ollama](https://ollama.ai) (local) | `RECONNOR_LLM=ollama` | `llama3.2` |
+| [OpenAI](https://openai.com) | `OPENAI_API_KEY` | `gpt-4o-mini` |
+| [Anthropic](https://anthropic.com) | `ANTHROPIC_API_KEY` | `claude-3-haiku-20240307` |
+| [Gemini](https://makersuite.google.com) | `GEMINI_API_KEY` | `gemini-1.5-flash` |
+
+### Per-Tool AI Usage (Ollama models)
 ```bash
-# First: install Ollama and pull a model
-# Then: add --ollama-model to any supported tool
-python3 main.py admin example.com --ollama-model llama3.2
-python3 main.py dir-bust example.com --ollama-model llama3.2
-python3 main.py fuzz example.com/page?id=1 --ollama-model llama3.2
-python3 main.py redirects example.com --ollama-model llama3.2
-python3 main.py robots example.com --ollama-model llama3.2
-python3 main.py shodan example.com --ollama-model llama3.2
+python3 main.py fuzz https://example.com --ollama-model llama3.2
+python3 main.py forms https://example.com --ollama-model llama3.2
+python3 main.py admin https://example.com --ollama-model llama3.2
+python3 main.py openredirect https://example.com --ollama-model llama3.2
+```
+
+Tools with AI support: `fuzz`, `forms`, `admin`, `openredirect`, `sqli`, `xss`, `dir-bust`, `redirects`, `robots`, `shodan`, `js`, `auto-recon`, `ai-chat`
+
+### Cloud LLMs
+```bash
+export OPENAI_API_KEY="sk-..."
+python3 main.py auto-recon example.com --use-ai --llm-provider openai
+
+export ANTHROPIC_API_KEY="sk-ant-..."
+python3 main.py auto-recon example.com --use-ai --llm-provider anthropic
+
+python3 main.py ai-chat --provider openai --model gpt-4o-mini
 ```
 
 See [wiki/ollama-integration.md](wiki/ollama-integration.md) for details.
@@ -76,6 +105,25 @@ Tools to gather information about a target.
 | [phone-info](wiki/phone-info.md) | Phone number intelligence and carrier lookup |
 | [phone-social](wiki/phone-social.md) | Find social accounts linked to a phone number |
 | [tor-check](wiki/tor-check.md) | Tor/dark web reconnaissance |
+
+### 1b. AI & Autonomous Tools
+Intelligent agents and interactive AI helpers.
+
+| Tool | Description |
+|------|-------------|
+| [auto-recon](#auto-recon) | Autonomous recon orchestrator with AI-driven decision making |
+| [ai-chat](#ai-chat) | Autonomous AI assistant that runs 81 tools via natural language |
+
+### 1c. Advanced Security Testing
+Specialized security testing tools.
+
+| Tool | Description |
+|------|-------------|
+| [jwt](#jwt) | JWT analysis and attack toolkit (decode, crack, alg confusion, KID) |
+| [ssrf](#ssrf) | Blind and reflected SSRF detection with OOB verification |
+| [takeover](#takeover) | Subdomain takeover detection (20+ cloud services) |
+| [brute](#brute) | HTTP form/basic/digest authentication brute forcer |
+| [report](#report) | Generate HTML/JSON/text pentest reports from JSON output |
 
 ### 2. Website Analysis
 Tools to analyze websites and web technologies.
@@ -531,6 +579,84 @@ Checks for .onion mirrors, exit node presence, and performs dark web searches.
 
 ```
 python3 main.py tor-check example.com
+```
+
+### auto-recon
+**Autonomous reconnaissance orchestrator.**  
+Chains 8-12 recon tools sequentially. Can optionally use AI to guide decisions and summarize findings.
+
+```
+python3 main.py auto-recon example.com
+python3 main.py auto-recon example.com --ext --light
+python3 main.py auto-recon example.com --use-ai --llm-provider openai
+```
+
+### ai-chat
+**Autonomous AI security assistant that runs tools by itself.**  
+Chat with an LLM (Ollama, OpenAI, Anthropic, Gemini) that can autonomously execute any Reconnor tool, analyze results, and chain multi-step recon workflows — all via natural language.
+
+**How it works:** The AI plans the approach, runs tools one at a time via `TOOL:` commands, shows output in real time, then analyzes results and suggests next steps.
+
+**LLM providers (set via `RECONNOR_LLM` env or `--provider`):**
+- `ollama` (default) — local, uses `OLLAMA_HOST` + `OLLAMA_MODEL`
+- `openai` — requires `OPENAI_API_KEY`
+- `anthropic` — requires `ANTHROPIC_API_KEY`
+- `gemini` — requires `GEMINI_API_KEY`
+
+```
+python3 main.py ai-chat                              # Interactive chat mode
+python3 main.py ai-chat "recon example.com"           # Single prompt, non-interactive
+python3 main.py ai-chat --provider openai --model gpt-4o-mini
+python3 main.py ai-chat --json "scan example.com"     # JSON output (quiet mode)
+```
+
+### jwt
+**JWT analysis and attack toolkit.**  
+Decodes JWT tokens, attempts secret cracking, tests algorithm confusion, KID injection, and JWK confusion.
+
+```
+python3 main.py jwt --token eyJhbGciOiJIUzI1NiIs...
+python3 main.py jwt --token eyJ... --crack --wordlist rockyou.txt
+python3 main.py jwt --token eyJ... --alg none
+```
+
+### ssrf
+**SSRF vulnerability scanner.**  
+Detects blind and reflected Server-Side Request Forgery with out-of-band verification and cloud metadata probing.
+
+```
+python3 main.py ssrf --url "http://example.com/page?url=SSRF"
+python3 main.py ssrf --url "http://example.com/page?url=SSRF" --blind
+python3 main.py ssrf --urls "http://site1.com?q=SSRF,http://site2.com?url=SSRF"
+```
+
+### takeover
+**Subdomain takeover detector.**  
+Checks CNAME records against 20+ cloud services (AWS, Azure, GitHub, Heroku, Netlify, etc.) for unclaimed resources.
+
+```
+python3 main.py takeover --domain sub.example.com
+python3 main.py takeover --domains sub1.example.com,sub2.example.com
+```
+
+### brute
+**Login brute forcer.**  
+Attempts form-based, HTTP Basic, and Digest authentication brute force with automatic field detection.
+
+```
+python3 main.py brute --url http://example.com/login --user admin
+python3 main.py brute --url http://example.com/wp-login.php --user-file users.txt --pass-file pass.txt
+python3 main.py brute --url http://example.com/login --username admin --passwords password,123456,admin
+```
+
+### report
+**Pentest report generator.**  
+Consumes JSON output files from any tool and generates professional HTML, JSON, or text reports.
+
+```
+python3 main.py report --input results.json --format html
+  python3 main.py report --input scan1.json,scan2.json --output report.html --title "Pentest Report"
+python3 main.py report --input all_results.json --format json
 ```
 
 ---

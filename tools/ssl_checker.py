@@ -3,6 +3,7 @@ import ssl
 from datetime import datetime
 
 from utils.output import section, info, success, warning, error, result, table
+from utils.external_tools import openssl_check, openssl_test_versions, find_tool
 
 
 def get_certificate_info(host, port=443, timeout=10):
@@ -25,7 +26,7 @@ class SSLChecker:
     description = "Check SSL/TLS certificate information"
 
     @staticmethod
-    def run(target, port=443):
+    def run(target, port=443, ext=False):
         section(f"SSL/TLS Certificate Check: {target}:{port}")
 
         if target.startswith(("http://", "https://")):
@@ -33,13 +34,27 @@ class SSLChecker:
             parsed = urlparse(target)
             target = parsed.hostname or target
 
+        if ext and find_tool("openssl"):
+            section("OpenSSL Deep TLS Analysis")
+            openssl_data = openssl_check(target, port)
+            if openssl_data:
+                for key, val in openssl_data.items():
+                    result(key.capitalize(), val)
+
+            supported, unsupported = openssl_test_versions(target, port)
+            if supported:
+                success(f"Supported: {', '.join(supported)}")
+            if unsupported:
+                info(f"Unsupported: {', '.join(unsupported)}")
+
         cert = get_certificate_info(target, port)
 
         if not cert:
             error(f"Could not retrieve certificate for {target}:{port}")
             return {"target": target, "error": "No certificate retrieved"}
 
-        info("Certificate Information:")
+        if not ext:
+            info("Certificate Information:")
 
         subject = dict(x[0] for x in cert.get("subject", []))
         issuer = dict(x[0] for x in cert.get("issuer", []))
@@ -79,17 +94,17 @@ class SSLChecker:
             for entry_type, entry_val in san:
                 result(entry_type, entry_val)
 
-        tls_version = ssl.HAS_SNI
-        section("TLS Versions Check")
-        for ver_name, ver_protocol, ver_desc in [
-            ("SSLv2", None, "Insecure - should be disabled"),
-            ("SSLv3", None, "Insecure - should be disabled"),
-            ("TLSv1.0", ssl.PROTOCOL_TLSv1, "Deprecated - should be disabled"),
-            ("TLSv1.1", ssl.PROTOCOL_TLSv1, "Deprecated - should be disabled"),
-            ("TLSv1.2", ssl.PROTOCOL_TLS_SERVER, "Secure - should be enabled"),
-            ("TLSv1.3", ssl.PROTOCOL_TLS_SERVER, "Secure - should be enabled"),
-        ]:
-            info(f"  {ver_name}: checking not fully supported in basic mode")
+        if not ext:
+            section("TLS Versions Check")
+            for ver_name, ver_protocol, ver_desc in [
+                ("SSLv2", None, "Insecure - should be disabled"),
+                ("SSLv3", None, "Insecure - should be disabled"),
+                ("TLSv1.0", ssl.PROTOCOL_TLSv1, "Deprecated - should be disabled"),
+                ("TLSv1.1", ssl.PROTOCOL_TLSv1, "Deprecated - should be disabled"),
+                ("TLSv1.2", ssl.PROTOCOL_TLS_SERVER, "Secure - should be enabled"),
+                ("TLSv1.3", ssl.PROTOCOL_TLS_SERVER, "Secure - should be enabled"),
+            ]:
+                info(f"  {ver_name}: checking not fully supported in basic mode")
 
         info(f"\nCertificate details for {target}:{port} retrieved successfully")
         return {"target": target, "port": port, "subject": subject, "issuer": issuer, "san": san}

@@ -350,7 +350,6 @@ class AdvancedSQLIScanner:
             return {"target": target, "results": all_results}
 
         def test_url_param(param_name, payload, payload_type, payload_category):
-            nonlocal all_results
             try:
                 test_params = {k: v[0] for k, v in url_params.items()}
                 test_params[param_name] = payload
