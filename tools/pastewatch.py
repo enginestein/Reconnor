@@ -34,7 +34,7 @@ class PasteWatch:
         section(f"Paste & Code Snippet Monitor: {target}")
 
         query = target.strip()
-        all_results = {"pastbin": [], "psbdmp": [], "mentions": [], "recent": []}
+        all_results = {"pastebin": [], "psbdmp": [], "mentions": [], "recent": []}
 
         is_email = bool(re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', query))
         is_domain = bool(re.match(r'^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', query)) and not is_email
