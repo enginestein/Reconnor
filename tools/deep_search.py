@@ -90,7 +90,7 @@ class DeepSearch:
     description = "Deep internet search engine: cross-engine search, file types, code repositories, people search, security research, and Google dorking"
 
     @staticmethod
-    def run(target, timeout=10):
+    def run(target, timeout=10, limit=20):
         section(f"Deep Internet Search: {target}")
 
         query = target.strip()

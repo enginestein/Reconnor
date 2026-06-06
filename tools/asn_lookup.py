@@ -6,7 +6,7 @@ from utils.output import section, info, success, warning, error, result, table
 def get_asn_info(target):
     try:
         resp = requests.get(
-            f"https://ip-api.com/json/{target}?fields=66846719",
+            f"https://ip-api.com/json/{target}?fields=status,as,org,isp,query",
             timeout=10,
             headers={"User-Agent": "Mozilla/5.0"},
         )
@@ -19,9 +19,45 @@ def get_asn_info(target):
                     "isp": data.get("isp", ""),
                     "ip": data.get("query", target),
                 }
-        return None
     except:
-        return None
+        pass
+
+    try:
+        resp = requests.get(
+            f"https://ipwhois.app/json/{target}",
+            timeout=10,
+            headers={"User-Agent": "Mozilla/5.0"},
+        )
+        if resp.status_code == 200:
+            data = resp.json()
+            if data.get("success") and data.get("asn"):
+                return {
+                    "asn": f"AS{data.get('asn', '')}",
+                    "org": data.get("org", ""),
+                    "isp": data.get("isp", ""),
+                    "ip": data.get("ip", target),
+                }
+    except:
+        pass
+
+    try:
+        resp = requests.get(
+            f"https://rdap.arin.net/registry/ip/{target}",
+            timeout=10,
+            headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"},
+        )
+        if resp.status_code == 200:
+            data = resp.json()
+            return {
+                "asn": data.get("handle", ""),
+                "org": data.get("name", ""),
+                "isp": data.get("name", ""),
+                "ip": target,
+            }
+    except:
+        pass
+
+    return None
 
 
 def get_asn_via_bgpview(asn, timeout=15):

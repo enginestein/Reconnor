@@ -334,7 +334,7 @@ class WAFDetector:
         else:
             section("No WAF Detected")
             info("The target does not appear to be behind a known WAF or reverse proxy")
-            info("Server header:", normal_headers.get("Server", "Not disclosed"))
+            info(f"Server header: {normal_headers.get('Server', 'Not disclosed')}")
 
         section("Interesting Headers")
         interesting = ["Server", "X-Powered-By", "X-Generator", "Via", "X-Cache",

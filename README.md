@@ -1,8 +1,16 @@
-# Reconnor
+
+    ____  ________________  _   ___   ______  ____
+   / __ \/ ____/ ____/ __ \/ | / / | / / __ \/ __ \
+  / /_/ / __/ / /   / / / /  |/ /  |/ / / / / /_/ /
+ / _, _/ /___/ /___/ /_/ / /|  / /|  / /_/ / _, _/
+/_/ |_/_____/\____/\____/_/ |_/_/ |_/\____/_/ |_|
+
+
+> **WIP**
 
 ## Overview
 
-A comprehensive, custom-built suite of 60 security research and OSINT (Open Source Intelligence) tools for educational purposes. All tools are standalone Python scripts with no external tool wrappers.
+A comprehensive, custom-built suite of **82 security research and OSINT (Open Source Intelligence) tools** for educational purposes. All tools are standalone Python scripts with no external tool wrappers.
 
 > **Optional external tools** (nmap, amass, ffuf, etc.) can be enabled per-tool via `--nmap`/`--ext` flags.  
 > Run `reconnor-setup` to auto-install all system dependencies, or `pip install .[ext]` for pip-based tools.
@@ -106,13 +114,25 @@ Tools to gather information about a target.
 | [phone-social](wiki/phone-social.md) | Find social accounts linked to a phone number |
 | [tor-check](wiki/tor-check.md) | Tor/dark web reconnaissance |
 
+### 1a. OSINT & Threat Intelligence
+Specialized OSINT tools for tracking threats, phishing, malware, and social platforms.
+
+| Tool | Description |
+|------|-------------|
+| [malware-hunt](wiki/malware-hunt.md) | Multi-source malware URL & IOC hunter (URLhaus, ThreatFox, MalwareBazaar, Feodo) |
+| [c2-hunt](wiki/c2-hunt.md) | C2 infrastructure reconnaissance (blocklists, SSL fingerprints, panel discovery) |
+| [phish-hunt](wiki/phish-hunt.md) | Phishing infrastructure hunter (URLScan, cert monitoring, kit discovery, dorking) |
+| [telegram-osint](wiki/telegram-osint.md) | Telegram OSINT (channel/group intelligence, message analysis, forward tracking) |
+| [reddit-osint](wiki/reddit-osint.md) | Reddit OSINT (user profile analysis, subreddit recon, content tracking) |
+| [social-recon](wiki/social-recon.md) | Cross-platform social media recon (60+ platforms, profile discovery, correlation) |
+
 ### 1b. AI & Autonomous Tools
 Intelligent agents and interactive AI helpers.
 
 | Tool | Description |
 |------|-------------|
 | [auto-recon](#auto-recon) | Autonomous recon orchestrator with AI-driven decision making |
-| [ai-chat](#ai-chat) | Autonomous AI assistant that runs 81 tools via natural language |
+| [ai-chat](#ai-chat) | Autonomous AI assistant that runs 82 tools via natural language |
 
 ### 1c. Advanced Security Testing
 Specialized security testing tools.
@@ -123,6 +143,13 @@ Specialized security testing tools.
 | [ssrf](#ssrf) | Blind and reflected SSRF detection with OOB verification |
 | [takeover](#takeover) | Subdomain takeover detection (20+ cloud services) |
 | [brute](#brute) | HTTP form/basic/digest authentication brute forcer |
+| [graphql](wiki/graphql.md) | GraphQL security scanner (introspection, batching, query depth, auth bypass) |
+| [api-fuzz](wiki/api-fuzz.md) | Advanced REST/GraphQL API fuzzer (header injection, param pollution, rate limits) |
+| [smuggle](wiki/smuggle.md) | HTTP request smuggler (CL.TE, TE.CL, TE.TE detection) |
+| [ws](wiki/ws.md) | WebSocket security tester (origin bypass, message fuzzing, DoS resistance) |
+| [race](wiki/race.md) | Race condition tester (concurrent request racing for OTP/discount bypass) |
+| [ssti](wiki/ssti.md) | SSTI scanner (Jinja2, Twig, Freemarker, Velocity, Jade, ERB, Tornado, Mako, Smarty) |
+| [xxe](wiki/xxe.md) | XXE scanner (file read, SSRF, blind exfiltration, 9 DOCTYPE variants) |
 | [report](#report) | Generate HTML/JSON/text pentest reports from JSON output |
 
 ### 2. Website Analysis
@@ -161,11 +188,50 @@ Tools to identify security vulnerabilities.
 | [admin](wiki/admin.md) | Admin panel finder |
 | [openredirect](wiki/openredirect.md) | Open redirect checker |
 
-### 4. File & Metadata Analysis
+### 4. Network & Infrastructure
+Tools for network-level scanning, enumeration, and protocol analysis.
+
+| Tool | Description |
+|------|-------------|
+| [net-scan](wiki/net-scan.md) | Network scanner (ARP discovery, ping sweep, OS fingerprinting, port scanning) |
+| [snmp](wiki/snmp.md) | SNMP enumerator (community string brute force, MIB walk, interface/user extraction) |
+| [smb](wiki/smb.md) | SMB enumerator (share listing, null session, OS version, RID cycle user enum) |
+| [nfs](wiki/nfs.md) | NFS enumerator (export listing, mount checking, permission analysis, rpcbind query) |
+| [ldap](wiki/ldap.md) | LDAP scanner (anonymous bind, attribute discovery, user/group dump, DN enumeration) |
+| [rpc](wiki/rpc.md) | RPC enumerator (endpoint mapper dump, service discovery, unusual port detection) |
+
+### 5. Auth & Credential Attacks
+Authentication testing, password analysis, and credential discovery tools.
+
+| Tool | Description |
+|------|-------------|
+| [cred-spray](wiki/cred-spray.md) | Credential sprayer (password spraying with anti-lockout detection and cooldown) |
+| [default-creds](wiki/default-creds.md) | Default credential checker (500+ known device/service defaults) |
+| [pass-analyze](wiki/pass-analyze.md) | Password strength analyzer (entropy, patterns, crack time estimation) |
+| [hash-id](wiki/hash-id.md) | Hash identifier and cracker (50+ hash types, wordlist/rainbow table cracking) |
+
+### 6. Cloud & Container Security
+Cloud infrastructure, container, and Kubernetes security auditing tools.
+
+| Tool | Description |
+|------|-------------|
+| [aws-enum](wiki/aws-enum.md) | AWS enumeration (IAM/S3/EC2/STS checks, bucket discovery, metadata probing) |
+| [k8s](wiki/k8s.md) | Kubernetes security audit (RBAC, dashboard, etcd, kubelet, API server, pod/secret exposure) |
+| [container](wiki/container.md) | Container security scanner (Docker API, breakout tests, image vulnerability check) |
+| [cloud-meta](wiki/cloud-meta.md) | Cloud metadata exposure scanner (AWS, Azure, GCP, Alibaba, DigitalOcean, OpenStack) |
+
+### 7. File & Metadata Analysis
 
 | Tool | Description |
 |------|-------------|
 | [metadata](wiki/metadata.md) | File metadata/EXIF extraction |
+
+### 8. Project Management & Reporting
+
+| Tool | Description |
+|------|-------------|
+| [project](wiki/project.md) | Project database (SQLite-backed target/project management, scan comparison, run tracking) |
+| [report](#report) | Pentest report generator (HTML/JSON/text from JSON output files) |
 
 ---
 
@@ -173,15 +239,25 @@ Tools to identify security vulnerabilities.
 
 ### admin
 **Find admin panels and login pages.**  
-Scans 100+ common admin panel paths and checks for login indicators.
+Scans 250+ admin panel paths with CMS detection, fuzzy matching, login form analysis, and optional AI-assisted detection.
 
 ```
 python3 main.py admin https://example.com
+python3 main.py admin https://example.com --ollama-model llama3.2
+```
+
+### api-fuzz
+**Advanced REST/GraphQL API fuzzer.**  
+Tests header injection, parameter pollution, rate limiting, and endpoint discovery. Supports both REST and GraphQL APIs.
+
+```
+python3 main.py api-fuzz https://api.example.com --inject-headers --rate-limit
+python3 main.py api-fuzz https://api.example.com/api/users --method POST --data '{"name":"test"}'
 ```
 
 ### asn
 **ASN, network range, and ISP information lookup.**  
-Uses ip-api.com and bgpview.io to resolve ASN details.
+Uses ip-api.com, bgpview.io, and rdap.arin.net to resolve ASN details.
 
 ```
 python3 main.py asn 8.8.8.8
@@ -189,13 +265,51 @@ python3 main.py asn AS15169
 python3 main.py asn example.com
 ```
 
+### auto-recon
+**Autonomous reconnaissance orchestrator.**  
+Chains 8-12 recon tools sequentially. Can optionally use AI to guide decisions and summarize findings.
+
+```
+python3 main.py auto-recon example.com
+python3 main.py auto-recon example.com --ext --light
+python3 main.py auto-recon example.com --use-ai --llm-provider openai
+```
+
+### aws-enum
+**AWS enumeration.**  
+Checks IAM, S3 buckets, EC2 metadata, and STS endpoints. Discovers open buckets and tests for metadata service exposure.
+
+```
+python3 main.py aws-enum --target example.com --s3 --metadata
+python3 main.py aws-enum --bucket my-bucket-name
+```
+
 ### breach
 **Data breach checker.**  
-Check emails against the HIBP API and passwords against known breaches.
+Check emails against the HIBP API (k-anonymity model) and passwords against known breaches. Includes a built-in database of 40+ major breaches.
 
 ```
 python3 main.py breach email@example.com
 python3 main.py breach mypassword --type password
+```
+
+### brute
+**Login brute forcer.**  
+Attempts form-based, HTTP Basic, and Digest authentication brute force with automatic field detection.
+
+```
+python3 main.py brute --url http://example.com/login --user admin
+python3 main.py brute --url http://example.com/wp-login.php --user-file users.txt --pass-file pass.txt
+python3 main.py brute --url http://example.com/login --username admin --passwords password,123456,admin
+```
+
+### c2-hunt
+**C2 infrastructure reconnaissance.**  
+Hunts for command-and-control infrastructure using SSL fingerprints, blocklists, ThreatFox, and C2 panel path brute forcing.
+
+```
+python3 main.py c2-hunt example.com --check-paths
+python3 main.py c2-hunt 185.130.5.173 --port 8080
 ```
 
 ### certsearch
@@ -209,10 +323,28 @@ python3 main.py certsearch example.com --all
 
 ### cloud
 **Cloud service enumeration.**  
-Tests bucket names across AWS S3, Azure Blob, GCP Storage, Firebase, Heroku, Netlify, Vercel, and 10+ other cloud platforms.
+Tests bucket names across 18+ cloud platforms including AWS S3, Azure Blob, GCP Storage, Firebase, Heroku, Netlify, Vercel, DigitalOcean Spaces, Alibaba OSS, Backblaze B2, Wasabi, Linode, Vultr, Scaleway, and more.
 
 ```
 python3 main.py cloud example.com
+```
+
+### cloud-meta
+**Cloud metadata exposure scanner.**  
+Checks for exposed cloud metadata services across AWS, Azure, GCP, Alibaba, DigitalOcean, and OpenStack.
+
+```
+python3 main.py cloud-meta --check-all
+python3 main.py cloud-meta --provider aws
+```
+
+### container
+**Container security scanner.**  
+Scans Docker API endpoints, tests for container breakout, checks image vulnerabilities, and audits container configurations.
+
+```
+python3 main.py container --target 192.168.1.100 --breakout
+python3 main.py container --target 192.168.1.100 --images
 ```
 
 ### cors
@@ -225,19 +357,46 @@ python3 main.py cors https://api.example.com
 
 ### crawl
 **Recursive web crawler.**  
-Crawls a website up to a specified depth, building a URL tree.
+Crawls a website up to a specified depth, building a URL tree. Supports sitemap.xml and robots.txt discovery, concurrent fetching, and JS URL extraction.
 
 ```
 python3 main.py crawl https://example.com --depth 3 --max-urls 200
 ```
 
+### cred-spray
+**Credential sprayer.**  
+Password spraying tool with anti-lockout detection, configurable delay between attempts, and per-user password limits.
+
+```
+python3 main.py cred-spray https://example.com/login --username admin --passwords Password1,Welcome1
+python3 main.py cred-spray https://example.com/login --user-file users.txt --pass-file pass.txt
+```
+
 ### cve
 **CVE vulnerability search.**  
-Queries CIRCL and NVD databases for known vulnerabilities matching a keyword.
+Queries CIRCL, NVD, OpenCVE, and Omise CVE databases for known vulnerabilities matching a keyword.
 
 ```
 python3 main.py cve log4j
 python3 main.py cve wordpress --limit 50
+```
+
+### deep-search
+**Cross-engine deep internet search.**  
+Searches across 10 search engines for file types, code repositories, people, and generates dork queries.
+
+```
+python3 main.py deep-search "company name + credentials"
+python3 main.py deep-search "domain.com" --limit 50
+```
+
+### default-creds
+**Default credential checker.**  
+Checks 500+ known default credentials against targets. Tests HTTP Basic Auth and reports known defaults by vendor/service/category.
+
+```
+python3 main.py default-creds https://example.com --category router
+python3 main.py default-creds https://example.com --service tomcat
 ```
 
 ### dir-bust
@@ -278,12 +437,20 @@ python3 main.py email https://example.com
 python3 main.py email https://example.com --crawl --depth 2
 ```
 
-### forms
-**HTML form security analysis.**  
-Analyzes forms for password fields over HTTP, missing CSRF tokens, autocomplete enabled, and more.
+### email-finder
+**Find email addresses from a domain.**  
+Scrapes web pages, uses pattern guessing, LinkedIn name extraction, and search engine dorking to discover email addresses.
 
 ```
-python3 main.py forms https://example.com/login
+python3 main.py email-finder example.com
+```
+
+### email-recon
+**Full email intelligence.**  
+Performs breach checks (HIBP k-anonymity), social media presence lookup (20+ platforms), search engine footprint analysis, and Gravatar profile lookup.
+
+```
+python3 main.py email-recon john@example.com
 ```
 
 ### favicon
@@ -294,9 +461,18 @@ Downloads a site's favicon and computes its mmh3 hash for Shodan-based device id
 python3 main.py favicon example.com
 ```
 
+### forms
+**HTML form security analysis.**  
+Analyzes forms for password fields over HTTP, missing CSRF tokens, autocomplete, XSS in form fields, multipart detection, CORS preflight, and information disclosure.
+
+```
+python3 main.py forms https://example.com/login
+python3 main.py forms https://example.com/login --ollama-model llama3.2
+```
+
 ### fuzz
 **URL fuzzing tool.**  
-Tests URL parameters with fuzz payloads including XSS, SQLi, path traversal, and more.
+Tests URL parameters with fuzz payloads across 12+ vulnerability categories (XSS, SQLi, SSTI, path traversal, etc.).
 
 ```
 python3 main.py fuzz https://example.com/page?id=1
@@ -319,8 +495,26 @@ Query GitHub for user profiles, repository info, or code search.
 
 ```
 python3 main.py github john --mode user
-python3 main.py github tensorflow --mode repo
+python3 main.py github tensorflow/tensorflow --mode repo
 python3 main.py github "api key" --mode search
+```
+
+### graphql
+**GraphQL security scanner.**  
+Discovers GraphQL endpoints, tests for introspection, batching attacks, query depth limits, alias bombing, and auth bypass.
+
+```
+python3 main.py graphql https://api.example.com/graphql
+python3 main.py graphql https://api.example.com/graphql --auth-bypass
+```
+
+### hash-id
+**Hash identifier and cracker.**  
+Identifies 50+ hash types and attempts cracking with wordlists or rainbow tables.
+
+```
+python3 main.py hash-id --hash 5d41402abc4b2a76b9719d911017c592 --crack
+python3 main.py hash-id --hash 5d41402abc4b2a76b9719d911017c592 --wordlist rockyou.txt
 ```
 
 ### headers
@@ -348,6 +542,34 @@ python3 main.py js https://example.com
 python3 main.py js https://example.com --threads 30
 ```
 
+### jwt
+**JWT analysis and attack toolkit.**  
+Decodes JWT tokens, attempts secret cracking, tests algorithm confusion, KID injection, and JWK confusion.
+
+```
+python3 main.py jwt --token eyJhbGciOiJIUzI1NiIs...
+python3 main.py jwt --token eyJ... --crack --wordlist rockyou.txt
+python3 main.py jwt --token eyJ... --alg none
+```
+
+### k8s
+**Kubernetes security audit.**  
+Audits Kubernetes clusters for RBAC misconfigurations, dashboard exposure, etcd access, kubelet API, and pod/secret exposure.
+
+```
+python3 main.py k8s 192.168.1.100 --full
+python3 main.py k8s https://k8s-api.example.com --insecure
+```
+
+### ldap
+**LDAP scanner.**  
+Tests anonymous bind, discovers attributes, and dumps users/groups from LDAP directories.
+
+```
+python3 main.py ldap 192.168.1.1 --dump
+python3 main.py ldap 192.168.1.1 --base-dn dc=example,dc=com
+```
+
 ### links
 **Link extractor.**  
 Extracts all links from a web page and optionally checks their HTTP status.
@@ -365,6 +587,16 @@ Looks up the vendor/OUI for a MAC address using macvendors.com API and a local O
 python3 main.py mac-address 00:11:22:33:44:55
 ```
 
+### malware-hunt
+**Multi-source malware URL & IOC hunter.**  
+Searches URLhaus, ThreatFox, MalwareBazaar, Feodo Tracker, and URLScan for malware indicators.
+
+```
+python3 main.py malware-hunt example.com
+python3 main.py malware-hunt 185.130.5.173 --type ip
+python3 main.py malware-hunt 44d88612fea8a8f36de82e1278abb02f --type hash
+```
+
 ### metadata
 **Metadata extractor.**  
 Extracts metadata/EXIF from images, PDFs, office documents, and audio files.
@@ -374,13 +606,73 @@ python3 main.py metadata /path/to/file.jpg
 python3 main.py metadata /path/to/directory/
 ```
 
+### net-scan
+**Network scanner.**  
+Performs ARP discovery, ping sweep, OS fingerprinting, and port scanning on local networks.
+
+```
+python3 main.py net-scan --subnet 192.168.1.0/24 --ping --os-detect
+python3 main.py net-scan --target 192.168.1.1 --ports 22,80,443
+```
+
+### nfs
+**NFS enumerator.**  
+Lists exported NFS shares, checks mount permissions, and queries rpcbind for service information.
+
+```
+python3 main.py nfs 192.168.1.1
+```
+
 ### openredirect
 **Open redirect checker.**  
-Tests URL parameters for open redirect vulnerabilities using 12 payload types.
+Tests URL parameters for open redirect vulnerabilities using 12 payload types, validation bypass, JS/DOM discovery, CRLF injection, and parameter pollution.
 
 ```
 python3 main.py openredirect https://example.com/page?url=http://evil.com
 python3 main.py openredirect https://example.com
+```
+
+### pass-analyze
+**Password strength analyzer.**  
+Analyzes password entropy, common patterns, and estimates crack time.
+
+```
+python3 main.py pass-analyze --password MyP@ssw0rd!
+python3 main.py pass-analyze --passwords pass1,pass2,pass3 --verbose
+```
+
+### pastewatch
+**Pastebin monitoring and leak detection.**  
+Searches paste sites (Pastebin, PSBDMP, Paste.ee, Hastebin, Ghostbin, Rentry, and more) for emails, domains, or keywords and monitors for new leaks.
+
+```
+python3 main.py pastewatch email@example.com
+python3 main.py pastewatch "company name + credentials"
+```
+
+### phish-hunt
+**Phishing infrastructure hunter.**  
+Hunts for phishing infrastructure using URLScan phishing search, certificate monitoring, phishing kit discovery, and Google dorking.
+
+```
+python3 main.py phish-hunt example.com --deep
+python3 main.py phish-hunt "paypal" --deep
+```
+
+### phone-info
+**Phone number intelligence.**  
+Looks up country, carrier, line type, location, and reputation for a phone number.
+
+```
+python3 main.py phone-info "+14155551234"
+```
+
+### phone-social
+**Social media finder for phone numbers.**  
+Finds social media and messaging accounts linked to a phone number.
+
+```
+python3 main.py phone-social "+14155551234"
 ```
 
 ### port-scan
@@ -393,13 +685,52 @@ python3 main.py port-scan 192.168.1.1 --ports 1-1000
 python3 main.py port-scan example.com --ports 22,80,443,3306
 ```
 
+### project
+**Project database management.**  
+SQLite-backed project management system for organizing targets, saving scan results, comparing runs, and tracking engagement history.
+
+```
+python3 main.py project --cmd init --name engagement1 --target example.com
+python3 main.py project --cmd save --project engagement1 --tool port-scan --file results.json
+python3 main.py project --cmd compare --compare 1,2
+```
+
+### race
+**Race condition tester.**  
+Tests for race conditions by sending concurrent requests. Supports coupon/discount, OTP bypass, and rate-limit bypass scenarios.
+
+```
+python3 main.py race https://example.com/coupon --threads 50
+python3 main.py race https://example.com/apply --param coupon=TEST --scenario coupon
+```
+
 ### redirects
 **Redirect chain tracker.**  
-Traces the full HTTP redirect chain with security analysis, detecting loops, HTTPS→HTTP downgrades, and open redirects.
+Traces the full HTTP redirect chain with security analysis, detecting loops, HTTPS to HTTP downgrades, and open redirects.
 
 ```
 python3 main.py redirects example.com
 python3 main.py redirects example.com --ollama-model llama3.2
+```
+
+### reddit-osint
+**Reddit OSINT.**  
+Analyzes Reddit user profiles, subreddits, and performs keyword searches across Reddit.
+
+```
+python3 main.py reddit-osint some_user
+python3 main.py reddit-osint programming --mode subreddit
+python3 main.py reddit-osint "keyword" --mode search
+```
+
+### report
+**Pentest report generator.**  
+Consumes JSON output files from any tool and generates professional HTML, JSON, or text reports.
+
+```
+python3 main.py report --input results.json --format html
+python3 main.py report --input scan1.json,scan2.json --output report.html --title "Pentest Report"
+python3 main.py report --input all_results.json --format json
 ```
 
 ### reverseip
@@ -420,6 +751,14 @@ python3 main.py robots example.com
 python3 main.py robots example.com --ollama-model llama3.2
 ```
 
+### rpc
+**RPC enumerator.**  
+Dumps RPC endpoint mapper, discovers RPC services, and detects unusual port mappings.
+
+```
+python3 main.py rpc 192.168.1.1
+```
+
 ### shodan
 **Shodan.io search.**  
 Searches Shodan for devices, services, and open ports. Supports host lookup and search query modes.
@@ -428,6 +767,24 @@ Searches Shodan for devices, services, and open ports. Supports host lookup and 
 python3 main.py shodan example.com
 python3 main.py shodan --query "apache 2.4.49 country:US"
 python3 main.py shodan example.com --ollama-model llama3.2
+```
+
+### smb
+**SMB enumerator.**  
+Lists SMB shares, tests null sessions, enumerates users via RID cycling, and detects OS version.
+
+```
+python3 main.py smb 192.168.1.1 --dump
+python3 main.py smb 192.168.1.1 --null-session
+```
+
+### smuggle
+**HTTP request smuggler.**  
+Detects and exploits HTTP request smuggling vulnerabilities (CL.TE, TE.CL, TE.TE).
+
+```
+python3 main.py smuggle example.com --port 80
+python3 main.py smuggle example.com --port 443 --tls
 ```
 
 ### smtp
@@ -439,9 +796,26 @@ python3 main.py smtp example.com
 python3 main.py smtp example.com --port 587
 ```
 
+### snmp
+**SNMP enumerator.**  
+Brute-forces SNMP community strings, walks MIB trees, and extracts interfaces, users, and processes.
+
+```
+python3 main.py snmp 192.168.1.1 --walk
+python3 main.py snmp 192.168.1.1 --community public
+```
+
+### social-recon
+**Cross-platform social media recon.**  
+Searches 60+ social platforms for a username, extracts profile metadata, and correlates findings.
+
+```
+python3 main.py social-recon username --threads 150
+```
+
 ### sociallinks
 **Social media link extractor.**  
-Finds links to 40+ social media platforms in a website's HTML.
+Finds links to 40+ social media platforms in a website's HTML, validates them with HEAD requests, and extracts OG/title metadata.
 
 ```
 python3 main.py sociallinks https://example.com
@@ -449,7 +823,7 @@ python3 main.py sociallinks https://example.com
 
 ### sqli
 **SQL injection scanner.**  
-Tests URL parameters with 14 SQL injection payloads and checks responses for error patterns.
+Tests URL parameters with 200+ SQL injection payloads and checks responses for error patterns, time-based detection, and WAF bypass.
 
 ```
 python3 main.py sqli https://example.com/page?id=1
@@ -464,13 +838,41 @@ python3 main.py ssl example.com
 python3 main.py ssl example.com --port 8443
 ```
 
+### ssrf
+**SSRF vulnerability scanner.**  
+Detects blind and reflected Server-Side Request Forgery with out-of-band verification and cloud metadata probing.
+
+```
+python3 main.py ssrf --url "http://example.com/page?url=SSRF"
+python3 main.py ssrf --url "http://example.com/page?url=SSRF" --blind
+python3 main.py ssrf --urls "http://site1.com?q=SSRF,http://site2.com?url=SSRF"
+```
+
+### ssti
+**SSTI scanner.**  
+Scans for Server-Side Template Injection across 9 template engines (Jinja2, Twig, Freemarker, Velocity, Jade, ERB, Tornado, Mako, Smarty).
+
+```
+python3 main.py ssti https://example.com/page?name=test
+python3 main.py ssti https://example.com/page?name=test --rce
+```
+
 ### subdomain
 **Subdomain finder.**  
-Brute-forces subdomains using a built-in list of 1000+ common subdomains.
+Brute-forces subdomains using a built-in list of 1000+ common subdomains. Supports external tools (sublist3r, amass, assetfinder).
 
 ```
 python3 main.py subdomain example.com
 python3 main.py subdomain example.com -w /path/to/wordlist.txt
+```
+
+### takeover
+**Subdomain takeover detector.**  
+Checks CNAME records against 20+ cloud services (AWS, Azure, GitHub, Heroku, Netlify, etc.) for unclaimed resources.
+
+```
+python3 main.py takeover --domain sub.example.com
+python3 main.py takeover --domains sub1.example.com,sub2.example.com
 ```
 
 ### tech
@@ -481,13 +883,31 @@ Identifies 100+ web technologies including CMS, frameworks, CDN, WAF, analytics,
 python3 main.py tech example.com
 ```
 
+### telegram-osint
+**Telegram OSINT.**  
+Analyzes Telegram channels and groups, extracts message patterns, tracks forwards, and identifies activity patterns.
+
+```
+python3 main.py telegram-osint @channel_name --deep
+python3 main.py telegram-osint username --limit 50
+```
+
+### tor-check
+**Tor/dark web reconnaissance.**  
+Checks for .onion mirrors, exit node presence, and performs dark web searches.
+
+```
+python3 main.py tor-check example.com
+```
+
 ### username
 **Username search.**  
-Searches for a username across 100+ social media and web platforms (sherlock-style).
+Searches for a username across 100+ social media and web platforms (sherlock-style). Supports automatic case variants with `--variants`.
 
 ```
 python3 main.py username john
 python3 main.py username john --platforms github,twitter,reddit
+python3 main.py username JohnDoe --variants
 ```
 
 ### waf
@@ -500,7 +920,7 @@ python3 main.py waf https://example.com
 
 ### wayback
 **Wayback Machine scraper.**  
-Fetches historical snapshots of a domain from the Wayback Machine.
+Fetches historical snapshots of a domain from the Wayback Machine CDX API.
 
 ```
 python3 main.py wayback example.com
@@ -516,147 +936,30 @@ python3 main.py whois example.com
 python3 main.py whois 8.8.8.8
 ```
 
+### ws
+**WebSocket security tester.**  
+Tests WebSocket connections for origin bypass, message fuzzing, and DoS resistance.
+
+```
+python3 main.py ws wss://example.com/ws --fuzz --dos
+python3 main.py ws wss://example.com/ws --origin https://attacker.com
+```
+
 ### xss
 **XSS scanner.**  
-Tests URL parameters and forms with 12 XSS payloads and checks for reflection in responses.
+Tests URL parameters and forms with 150+ XSS payloads including context-aware, polyglot, DOM, stored, mXSS, and CSP analysis.
 
 ```
 python3 main.py xss https://example.com/page?q=test
 ```
 
-### deep-search
-**Cross-engine deep internet search.**  
-Searches across search engines for file types, code repositories, people, and generates dork queries.
+### xxe
+**XXE scanner.**  
+Scans for XML External Entity injection with file read, SSRF, and blind exfiltration across 9 DOCTYPE variants including XInclude and SVG.
 
 ```
-python3 main.py deep-search "company name + credentials"
-```
-
-### email-finder
-**Find email addresses from a domain.**  
-Uses scraping, pattern guessing, and search engine queries.
-
-```
-python3 main.py email-finder example.com
-```
-
-### email-recon
-**Full email intelligence.**  
-Performs breach checks, social media presence lookup, search footprint analysis, and Gravatar lookup.
-
-```
-python3 main.py email-recon john@example.com
-```
-
-### pastewatch
-**Pastebin monitoring and leak detection.**  
-Searches paste sites for emails, domains, or keywords and monitors for new leaks.
-
-```
-python3 main.py pastewatch email@example.com
-python3 main.py pastewatch "company name + credentials"
-```
-
-### phone-info
-**Phone number intelligence.**  
-Looks up country, carrier, line type, location, and reputation for a phone number.
-
-```
-python3 main.py phone-info "+14155551234"
-```
-
-### phone-social
-**Social media finder for phone numbers.**  
-Finds social media and messaging accounts linked to a phone number.
-
-```
-python3 main.py phone-social "+14155551234"
-```
-
-### tor-check
-**Tor/dark web reconnaissance.**  
-Checks for .onion mirrors, exit node presence, and performs dark web searches.
-
-```
-python3 main.py tor-check example.com
-```
-
-### auto-recon
-**Autonomous reconnaissance orchestrator.**  
-Chains 8-12 recon tools sequentially. Can optionally use AI to guide decisions and summarize findings.
-
-```
-python3 main.py auto-recon example.com
-python3 main.py auto-recon example.com --ext --light
-python3 main.py auto-recon example.com --use-ai --llm-provider openai
-```
-
-### ai-chat
-**Autonomous AI security assistant that runs tools by itself.**  
-Chat with an LLM (Ollama, OpenAI, Anthropic, Gemini) that can autonomously execute any Reconnor tool, analyze results, and chain multi-step recon workflows — all via natural language.
-
-**How it works:** The AI plans the approach, runs tools one at a time via `TOOL:` commands, shows output in real time, then analyzes results and suggests next steps.
-
-**LLM providers (set via `RECONNOR_LLM` env or `--provider`):**
-- `ollama` (default) — local, uses `OLLAMA_HOST` + `OLLAMA_MODEL`
-- `openai` — requires `OPENAI_API_KEY`
-- `anthropic` — requires `ANTHROPIC_API_KEY`
-- `gemini` — requires `GEMINI_API_KEY`
-
-```
-python3 main.py ai-chat                              # Interactive chat mode
-python3 main.py ai-chat "recon example.com"           # Single prompt, non-interactive
-python3 main.py ai-chat --provider openai --model gpt-4o-mini
-python3 main.py ai-chat --json "scan example.com"     # JSON output (quiet mode)
-```
-
-### jwt
-**JWT analysis and attack toolkit.**  
-Decodes JWT tokens, attempts secret cracking, tests algorithm confusion, KID injection, and JWK confusion.
-
-```
-python3 main.py jwt --token eyJhbGciOiJIUzI1NiIs...
-python3 main.py jwt --token eyJ... --crack --wordlist rockyou.txt
-python3 main.py jwt --token eyJ... --alg none
-```
-
-### ssrf
-**SSRF vulnerability scanner.**  
-Detects blind and reflected Server-Side Request Forgery with out-of-band verification and cloud metadata probing.
-
-```
-python3 main.py ssrf --url "http://example.com/page?url=SSRF"
-python3 main.py ssrf --url "http://example.com/page?url=SSRF" --blind
-python3 main.py ssrf --urls "http://site1.com?q=SSRF,http://site2.com?url=SSRF"
-```
-
-### takeover
-**Subdomain takeover detector.**  
-Checks CNAME records against 20+ cloud services (AWS, Azure, GitHub, Heroku, Netlify, etc.) for unclaimed resources.
-
-```
-python3 main.py takeover --domain sub.example.com
-python3 main.py takeover --domains sub1.example.com,sub2.example.com
-```
-
-### brute
-**Login brute forcer.**  
-Attempts form-based, HTTP Basic, and Digest authentication brute force with automatic field detection.
-
-```
-python3 main.py brute --url http://example.com/login --user admin
-python3 main.py brute --url http://example.com/wp-login.php --user-file users.txt --pass-file pass.txt
-python3 main.py brute --url http://example.com/login --username admin --passwords password,123456,admin
-```
-
-### report
-**Pentest report generator.**  
-Consumes JSON output files from any tool and generates professional HTML, JSON, or text reports.
-
-```
-python3 main.py report --input results.json --format html
-  python3 main.py report --input scan1.json,scan2.json --output report.html --title "Pentest Report"
-python3 main.py report --input all_results.json --format json
+python3 main.py xxe https://example.com/xml --file-read /etc/passwd
+python3 main.py xxe https://example.com/upload --collaborator your.oob.provider
 ```
 
 ---

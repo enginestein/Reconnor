@@ -136,40 +136,54 @@ class UsernameSearch:
     description = "Search for a username across 100+ social media and web platforms"
 
     @staticmethod
-    def run(target, platforms=None, threads=50):
+    def run(target, platforms=None, threads=50, variants=False):
         section(f"Username Search: '{target}'")
+
+        if variants:
+            usernames = list(dict.fromkeys([target, target.lower(), target.upper(), target.capitalize()]))
+            info(f"Trying {len(usernames)} case variations...")
+        else:
+            usernames = list(dict.fromkeys([target, target.lower()]))
+            info(f"Trying {len(usernames)} username(s) (original + lowercase)...")
 
         platform_list = list(PLATFORMS.items())
         if platforms:
             platform_filter = [p.strip().lower() for p in platforms.split(",")]
             platform_list = [(k, v) for k, v in platform_list if k.lower() in platform_filter or any(f in k.lower() for f in platform_filter)]
 
-        info(f"Checking '{target}' across {len(platform_list)} platforms...")
+        all_found = {}
+        total_checked = 0
+        for username in usernames:
+            info(f"Checking '{username}' across {len(platform_list)} platforms...")
 
-        found = []
-        checked = 0
-        with ThreadPoolExecutor(max_workers=threads) as executor:
-            futures = {}
-            for pname, pconfig in platform_list:
-                futures[executor.submit(check_platform, target, pname, pconfig["url"], pconfig["check"])] = pname
+            found = []
+            checked = 0
+            with ThreadPoolExecutor(max_workers=threads) as executor:
+                futures = {}
+                for pname, pconfig in platform_list:
+                    futures[executor.submit(check_platform, username, pname, pconfig["url"], pconfig["check"])] = pname
 
-            for future in as_completed(futures):
-                checked += 1
-                res = future.result()
-                if res:
-                    pname, url, status = res
-                    found.append((pname, url, status))
-                    success(f"[+] {pname}: {url}")
+                for future in as_completed(futures):
+                    checked += 1
+                    res = future.result()
+                    if res:
+                        pname, url, status = res
+                        found.append((pname, url, status))
+                        success(f"[+] {pname} ({username}): {url}")
 
-        if found:
-            found.sort(key=lambda x: x[0])
-            print()
-            success(f"Found {len(found)} profile(s) for '{target}' across {checked} platforms:")
-            table(
-                ["PLATFORM", "URL", "STATUS"],
-                [(p, u, str(s)) for p, u, s in found]
-            )
-        else:
-            warning(f"No profiles found for '{target}' across {checked} platforms")
+            if found:
+                found.sort(key=lambda x: x[0])
+                print()
+                success(f"Found {len(found)} profile(s) for '{username}' across {checked} platforms:")
+                table(
+                    ["PLATFORM", "URL", "STATUS"],
+                    [(p, u, str(s)) for p, u, s in found]
+                )
+            else:
+                warning(f"No profiles found for '{username}' across {checked} platforms")
 
-        return {"target": target, "found": found, "checked": checked}
+            if found:
+                all_found[username] = found
+            total_checked += checked
+
+        return {"target": target, "variants": usernames, "found": all_found, "checked": total_checked}

@@ -234,6 +234,7 @@ def build_parser():
             p.add_argument("target", help="Username to search")
             p.add_argument("--platforms", "-p", help="Filter by platform names (comma-sep)")
             p.add_argument("--threads", type=int, default=50, help="Max threads")
+            p.add_argument("--variants", action="store_true", help="Try all case variations (lower, upper, capitalized)")
 
         elif name == "certsearch":
             p.add_argument("target", help="Domain to search")
@@ -334,6 +335,7 @@ def build_parser():
 
         elif name == "deep-search":
             p.add_argument("target", help="Search query")
+            p.add_argument("--limit", type=int, default=20, help="Max results per source")
             p.add_argument("--timeout", type=int, default=10, help="HTTP timeout")
 
         elif name == "mac-address":
@@ -432,9 +434,9 @@ def build_parser():
 
         elif name == "brute":
             p.add_argument("--url", help="Target URL for login page")
-            p.add_argument("--username", help="Single username")
+            p.add_argument("--username", "--user", help="Single username")
             p.add_argument("--usernames", help="Comma-separated username list")
-            p.add_argument("--password", help="Single password")
+            p.add_argument("--password", "--pass", help="Single password")
             p.add_argument("--passwords", help="Comma-separated password list")
             p.add_argument("--user-file", help="File with usernames")
             p.add_argument("--pass-file", help="File with passwords")

@@ -1,5 +1,6 @@
 import json
 import sys
+import inspect
 from utils.output import section, info, success, warning, error
 from utils.llm_helper import LLMHelper
 
@@ -63,15 +64,10 @@ class AutoRecon:
             try:
                 tool_module = AutoRecon._import_tool(tool_name)
                 if tool_module:
-                    tool_kwargs = {**kwargs_dict}
-                    if target.startswith(("http://", "https://", "www.")):
-                        tool_kwargs["url" if "url" in dir(tool_module) else "target"] = target
-                    else:
-                        tool_kwargs.setdefault("domain" if tool_name != "port-scan" else "target", target)
-                        if tool_name == "port-scan":
-                            tool_kwargs["target"] = target
-
-                    result = tool_module.run(**tool_kwargs)
+                    sig = inspect.signature(tool_module.run)
+                    valid_kwargs = {k: v for k, v in kwargs_dict.items() if k in sig.parameters}
+                    valid_kwargs["target"] = target
+                    result = tool_module.run(**valid_kwargs)
                     results[tool_name] = result
                     success(f"{tool_name} completed")
 
@@ -106,22 +102,5 @@ class AutoRecon:
 
     @staticmethod
     def _import_tool(name):
-        name_map = {
-            "port-scan": "port_scan",
-        }
-        mod_name = name_map.get(name, name.replace("-", "_"))
-        try:
-            mod = __import__(f"tools.{mod_name}", fromlist=[mod_name])
-            for attr in dir(mod):
-                if attr.endswith("Recon") or attr.endswith("Scan") or attr == "Tool":
-                    cls = getattr(mod, attr)
-                    if hasattr(cls, "run"):
-                        return cls
-            # fallback: find any class with run()
-            for attr in dir(mod):
-                obj = getattr(mod, attr)
-                if isinstance(obj, type) and hasattr(obj, "run") and not attr.startswith("_"):
-                    return obj
-            return None
-        except:
-            return None
+        from tools import TOOLS as tool_registry
+        return tool_registry.get(name)

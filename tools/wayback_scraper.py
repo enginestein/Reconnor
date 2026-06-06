@@ -1,3 +1,5 @@
+import time
+import random
 import requests
 from datetime import datetime
 from urllib.parse import urlparse
@@ -5,7 +7,14 @@ from urllib.parse import urlparse
 from utils.output import section, info, success, warning, error, result, table
 
 
-CDX_API = "http://web.archive.org/cdx/search/cdx"
+CDX_API = "https://web.archive.org/cdx/search/cdx"
+
+USER_AGENTS = [
+    "Mozilla/5.0 (X11; Linux x86_64; rv:120.0) Gecko/20100101 Firefox/120.0",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15",
+    "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:121.0) Gecko/20100101 Firefox/121.0",
+]
 
 
 def fetch_wayback_urls(target, limit=500):
@@ -16,19 +25,35 @@ def fetch_wayback_urls(target, limit=500):
         "limit": limit,
         "collapse": "urlkey",
     }
-    try:
-        resp = requests.get(CDX_API, params=params, timeout=30, headers={"User-Agent": "Mozilla/5.0"})
-        if resp.status_code == 200:
-            data = resp.json()
-            return data[1:] if len(data) > 1 else []
-        else:
-            error(f"Wayback API returned status {resp.status_code}")
-            return []
-    except requests.exceptions.RequestException as e:
-        error(f"Wayback API request failed: {e}")
-        return []
-    except (ValueError, IndexError):
-        return []
+    last_error = None
+    for attempt in range(3):
+        user_agent = random.choice(USER_AGENTS)
+        headers = {"User-Agent": user_agent}
+        try:
+            resp = requests.get(CDX_API, params=params, timeout=60, headers=headers)
+            if resp.status_code == 200:
+                data = resp.json()
+                return data[1:] if len(data) > 1 else []
+            else:
+                last_error = f"Wayback API returned status {resp.status_code}"
+                error(last_error)
+        except requests.exceptions.Timeout:
+            last_error = f"Wayback API timeout (attempt {attempt + 1}/3)"
+            warning(last_error)
+        except requests.exceptions.RequestException as e:
+            last_error = f"Wayback API request failed: {e}"
+            warning(last_error)
+        except (ValueError, IndexError):
+            last_error = "Wayback API returned invalid JSON"
+            warning(last_error)
+
+        if attempt < 2:
+            backoff = (2 ** attempt) + random.uniform(0, 1)
+            info(f"  Retrying in {backoff:.1f}s...")
+            time.sleep(backoff)
+
+    error(last_error or "Wayback API request failed after 3 attempts")
+    return []
 
 
 class WaybackScraper:

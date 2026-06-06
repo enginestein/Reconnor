@@ -937,23 +937,27 @@ class TechDetector:
         for tech_name, sigs in TECH_SIGNATURES.items():
             score = 0
             matches = []
+            categories_hit = set()
 
             for h_name, h_pattern in sigs["headers"].items():
                 if h_name in headers:
                     val = headers[h_name]
                     if re.search(h_pattern, val, re.I):
                         score += 3
+                        categories_hit.add("headers")
                         matches.append(f"header {h_name}={val[:40]}")
 
             for html_pattern in sigs["html"]:
                 if re.search(html_pattern, html, re.I):
                     score += 2
+                    categories_hit.add("html")
                     matches.append(f"HTML pattern: {html_pattern}")
 
             for cookie_name in sigs["cookies"]:
                 for cookie in resp.cookies:
                     if cookie_name in cookie.name:
                         score += 2
+                        categories_hit.add("cookies")
                         matches.append(f"cookie: {cookie.name}")
                         break
 
@@ -963,14 +967,28 @@ class TechDetector:
                     fr = requests.head(test_url, timeout=5, headers={"User-Agent": "Mozilla/5.0"})
                     if fr.status_code == 200:
                         score += 2
+                        categories_hit.add("files")
                         matches.append(f"accessible file: {test_url}")
                     elif fr.status_code in [301, 302, 307, 308, 401, 403]:
                         score += 1
+                        categories_hit.add("files")
                         matches.append(f"redirect/forbidden: {test_url}")
                 except:
                     pass
 
-            if score >= 3:
+            if tech_name == "React":
+                has_react_script = bool(re.search(r'react\.(?:min\.)?js', html, re.I))
+                has_react_root = bool(re.search(r'__REACT_', html, re.I))
+                if not (has_react_script and has_react_root):
+                    categories_hit.discard("html")
+                    score = 0
+                    matches = [m for m in matches if "HTML pattern" not in m]
+
+            if tech_name == "Express.js":
+                if "headers" not in categories_hit:
+                    score = 0
+
+            if len(categories_hit) >= 2 and score >= 3:
                 found.append((tech_name, score, matches[:3]))
 
         if found:

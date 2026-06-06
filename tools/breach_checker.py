@@ -72,6 +72,7 @@ def check_hibp_password(password):
 def check_hibp_email(email, timeout=15):
     sha1 = hashlib.sha1(email.encode()).hexdigest().upper()
     prefix = sha1[:5]
+    suffix = sha1[5:]
     try:
         resp = requests.get(
             f"https://api.pwnedpasswords.com/range/{prefix}",
@@ -79,10 +80,14 @@ def check_hibp_email(email, timeout=15):
             headers={"User-Agent": "Reconnor-OSINT/1.0"},
         )
         if resp.status_code == 200:
-            return True
-        return False
+            for line in resp.text.split("\n"):
+                if line.startswith(suffix):
+                    count = int(line.split(":")[1].strip())
+                    return count
+            return 0
+        return -1
     except:
-        return False
+        return -1
 
 
 class BreachChecker:
@@ -111,18 +116,34 @@ class BreachChecker:
             if email_domain:
                 result("Domain", email_domain)
 
+            section("HIBP Breach Check")
+            hibp_count = check_hibp_email(target)
+            if hibp_count == -1:
+                warning("Could not check HIBP (API unavailable)")
+            elif hibp_count == 0:
+                success("Email NOT found in HIBP breach database")
+            else:
+                error(f"Email found in {hibp_count} breach(es) via HIBP!")
+
             section("Known Breach Database Lookup")
             relevant = []
+            seen = set()
             for breach in BREACH_DATABASE:
                 keywords = [target.split("@")[0].lower(), email_domain.lower()]
                 bname = breach["name"].lower()
                 if any(k in bname for k in keywords if k):
-                    relevant.append(breach)
+                    key = breach["name"]
+                    if key not in seen:
+                        relevant.append(breach)
+                        seen.add(key)
                 if email_domain and email_domain[:5] in bname:
-                    relevant.append(breach)
+                    key = breach["name"]
+                    if key not in seen:
+                        relevant.append(breach)
+                        seen.add(key)
 
             if relevant:
-                warning(f"Found {len(relevant)} potentially relevant breach(es):")
+                warning(f"Found {len(relevant)} potentially relevant breach(es) in local database:")
                 table(
                     ["BREACH", "DATE", "ACCOUNTS", "DATA TYPE"],
                     [(b["name"], b["date"], b["accounts"], b["type"]) for b in relevant],
@@ -130,15 +151,9 @@ class BreachChecker:
             else:
                 info("No directly matching breaches in local database")
 
-            section("Breach Database Listing")
-            info(f"Showing all {len(BREACH_DATABASE)} known breaches in database:")
-            table(
-                ["BREACH", "DATE", "ACCOUNTS", "DATA TYPE"],
-                [(b["name"], b["date"], b["accounts"], b["type"]) for b in BREACH_DATABASE],
-            )
-
             section("Recommendations")
-            warning("If your email appears in any of these breaches:")
+            if hibp_count > 0 or relevant:
+                warning("If your email appears in any of these breaches:")
             info("  1. Change passwords immediately (unique password per service)")
             info("  2. Enable 2FA/MFA on all accounts that support it")
             info("  3. Check for account takeovers (login history)")

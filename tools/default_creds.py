@@ -121,10 +121,26 @@ class DefaultCreds:
 
         section(f"Checking {len(filtered)} default credentials against {target_url}")
 
+        # First detect if the target uses HTTP Basic Auth by making a request without creds
+        requires_auth = False
+        if target_url.startswith("http"):
+            try:
+                probe = urllib.request.Request(target_url, headers={"User-Agent": "Mozilla/5.0"})
+                with urllib.request.urlopen(probe, timeout=timeout) as resp:
+                    if resp.status == 401:
+                        requires_auth = True
+                        info("Target requires HTTP Basic Authentication")
+            except urllib.error.HTTPError as e:
+                if e.code == 401:
+                    requires_auth = True
+                    info("Target requires HTTP Basic Authentication")
+            except:
+                pass
+
         for vendor, user, pwd in filtered:
             result_data["tested"].append({"vendor": vendor, "username": user, "password": pwd})
 
-            if target_url.startswith("http"):
+            if target_url.startswith("http") and requires_auth:
                 try:
                     import base64
                     auth = base64.b64encode(f"{user}:{pwd}".encode()).decode()
@@ -142,9 +158,8 @@ class DefaultCreds:
                 except:
                     pass
 
-        # Even without HTTP test, report all known defaults
-        for vendor, user, pwd in filtered:
-            result_data["reported"].append({"vendor": vendor, "username": user, "password": pwd})
+        if not requires_auth:
+            info("Target does not require HTTP Basic Auth — only reporting known default credentials for reference, not verified")
 
         section("Default Credential Check Complete")
         if result_data["verified"]:

@@ -122,6 +122,10 @@ class GitHubOSINT:
 
         elif mode == "repo":
             info(f"Fetching repository: {target}")
+            if "/" not in target:
+                warning(f"Repository '{target}' not found — expected format 'owner/repo' (e.g., 'tensorflow/tensorflow')")
+                warning("Try: python3 main.py github tensorflow --mode search")
+                return {"target": target, "error": "Invalid format. Use owner/repo (e.g., tensorflow/tensorflow)"}
             repo = github_request(f"repos/{target}")
             if repo is None:
                 warning("Could not fetch repo data (rate limited?)")

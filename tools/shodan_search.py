@@ -13,6 +13,22 @@ def shodan_api_key():
                 key = f.read().strip()
         except Exception:
             pass
+    if not key:
+        try:
+            config_paths = [
+                os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "reconnor.json"),
+                os.path.expanduser("~/.reconnor/config.json"),
+            ]
+            for cp in config_paths:
+                if os.path.exists(cp):
+                    with open(cp) as f:
+                        config = json.load(f)
+                    k = config.get("providers", {}).get("shodan", {}).get("api_key", "")
+                    if k and not k.startswith("${"):
+                        key = k
+                        break
+        except Exception:
+            pass
     return key
 
 def shodan_host(ip, key):

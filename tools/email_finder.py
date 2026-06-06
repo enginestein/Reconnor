@@ -1,6 +1,6 @@
 import re
 import requests
-from urllib.parse import urlparse, urljoin
+from urllib.parse import urlparse, urljoin, quote
 from utils.output import section, info, success, warning, error, result, table
 
 try:
@@ -40,7 +40,13 @@ COMMON_FORMATS = [
 ROLE_EMAILS = ["admin", "info", "support", "contact", "sales", "hello", "team", "careers",
                "jobs", "hr", "pr", "press", "media", "billing", "finance", "legal",
                "abuse", "postmaster", "hostmaster", "webmaster", "noreply", "newsletter",
-               "marketing", "partners", "feedback", "help", "service", "enquiries"]
+               "marketing", "partners", "feedback", "help", "service", "enquiries",
+               "office", "reception", "orders", "returns", "complaints", "recruitment",
+               "payroll", "travel", "it", "sysadmin", "devops", "engineering", "recruiting",
+               "talent", "vendor", "procurement", "general", "mail", "inbox", "business",
+               "community", "membership", "subscriptions", "events", "speakers", "sponsors",
+               "volunteer", "donate", "supporters", "club", "chairman", "ceo", "director",
+               "manager", "owner", "founder", "editor", "writer", "author", "contributor"]
 
 
 class EmailFinder:
@@ -72,6 +78,26 @@ class EmailFinder:
             f"https://{domain}/team",
             f"https://www.{domain}/about-us",
             f"https://{domain}/about-us",
+            f"https://www.{domain}/our-team",
+            f"https://{domain}/our-team",
+            f"https://www.{domain}/people",
+            f"https://{domain}/people",
+            f"https://www.{domain}/staff",
+            f"https://{domain}/staff",
+            f"https://www.{domain}/meet-the-team",
+            f"https://{domain}/meet-the-team",
+            f"https://www.{domain}/company/team",
+            f"https://{domain}/company/team",
+            f"https://www.{domain}/leadership",
+            f"https://{domain}/leadership",
+            f"https://www.{domain}/board",
+            f"https://{domain}/board",
+            f"https://www.{domain}/company",
+            f"https://{domain}/company",
+            f"https://www.{domain}/careers",
+            f"https://{domain}/careers",
+            f"https://www.{domain}/press",
+            f"https://{domain}/press",
         ]
 
         for url in urls_to_check:
@@ -125,12 +151,37 @@ class EmailFinder:
                                 info(f"  Found name: {name}")
 
                 linkedin_urls = [a["href"] for a in soup.find_all("a", href=True) if "linkedin.com/in/" in a["href"]]
-                for li_url in linkedin_urls[:5]:
+                for li_url in linkedin_urls[:10]:
                     path = urlparse(li_url).path.strip("/").split("/")
                     slug = path[-1] if path else ""
-                    name_match = re.match(r'([a-z]+)-([a-z]+)', slug, re.I)
-                    if name_match:
-                        name_pairs.append((name_match.group(1).capitalize(), name_match.group(2).capitalize()))
+                    for sep in ("-", "_", "."):
+                        name_match = re.match(r'([a-z]+)' + re.escape(sep) + r'([a-z]+)', slug, re.I)
+                        if name_match:
+                            first = name_match.group(1).capitalize()
+                            last = name_match.group(2).capitalize()
+                            name_pairs.append((first, last))
+                            info(f"  Found name from LinkedIn: {first} {last}")
+                            break
+
+                if not name_pairs:
+                    meta_name = soup.find("meta", attrs={"name": "author"}) or soup.find("meta", attrs={"property": "author"})
+                    if meta_name and meta_name.get("content"):
+                        parts = meta_name["content"].strip().split()
+                        if len(parts) >= 2:
+                            name_pairs.append((parts[0], parts[-1]))
+                            info(f"  Found name from meta author: {meta_name['content']}")
+
+                    if not name_pairs:
+                        for heading in soup.find_all(["h1", "h2", "h3", "h4"]):
+                            text = heading.get_text(strip=True)
+                            name_match = re.match(r'^(?:Meet\s+)?([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)', text)
+                            if name_match:
+                                parts = name_match.group(1).split()
+                                if len(parts) >= 2:
+                                    name_pairs.append((parts[0], parts[-1]))
+                                    info(f"  Found name from heading: {name_match.group(1)}")
+                                    if len(name_pairs) >= 5:
+                                        break
             except:
                 pass
 
@@ -188,20 +239,31 @@ class EmailFinder:
             info("Install dnspython for MX lookup: pip install dnspython")
 
         section("Phase 5: Search Engine Dorking for Emails")
-        search_urls = [
-            f"https://www.google.com/search?q=%40{domain}+email",
-            f"https://search.yahoo.com/search?p=%40{domain}+email",
-            f"https://www.bing.com/search?q=%40{domain}+email",
+        dork_queries = [
+            f"site:{domain} email",
+            f"@{domain} -site:linkedin.com -site:facebook.com",
+            f"\"@{domain}\" contact",
+            f"site:{domain} \"@\"",
+            f"site:{domain} mailto:",
+            f"\"{domain.split('.')[0]}\" email contact",
         ]
-        for search_url in search_urls:
-            try:
-                resp = requests.get(search_url, timeout=timeout,
-                    headers={"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:120.0) Gecko/20100101 Firefox/120.0"})
-                found = re.findall(r'[a-zA-Z0-9._%+-]+@' + re.escape(domain), resp.text)
-                for email in found:
-                    all_emails.add(email.lower())
-            except:
-                pass
+        search_urls = [
+            ("Google", "https://www.google.com/search?q={q}"),
+            ("Bing", "https://www.bing.com/search?q={q}"),
+            ("Yahoo", "https://search.yahoo.com/search?p={q}"),
+            ("DuckDuckGo", "https://duckduckgo.com/?q={q}"),
+        ]
+        for engine_name, search_template in search_urls:
+            for query in dork_queries:
+                try:
+                    search_url = search_template.format(q=quote(query))
+                    resp = requests.get(search_url, timeout=timeout,
+                        headers={"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:120.0) Gecko/20100101 Firefox/120.0"})
+                    found = re.findall(r'[a-zA-Z0-9._%+-]+@' + re.escape(domain), resp.text)
+                    for email in found:
+                        all_emails.add(email.lower())
+                except:
+                    pass
 
         section("Email Finder Summary")
         all_confirmed = sorted(all_emails)

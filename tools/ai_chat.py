@@ -4,6 +4,7 @@ import re
 import subprocess
 import sys
 import threading
+import time
 from datetime import datetime
 
 from utils.llm_helper import LLMHelper
@@ -29,6 +30,19 @@ CATEGORIES = [
     ("Utilities", ["report", "project", "auto-recon"]),
 ]
 
+TOOLS_WITH_POSITIONAL_TARGET = {
+    "admin", "asn", "auto-recon", "breach", "c2-hunt", "certsearch", "cloud",
+    "cors", "crawl", "cve", "deep-search", "dir-bust", "dns", "email",
+    "email-finder", "email-recon", "favicon", "forms", "fuzz", "geoip",
+    "github", "headers", "httpmethods", "js", "links", "mac-address",
+    "malware-hunt", "metadata", "openredirect", "pastewatch", "phish-hunt",
+    "phone-info", "phone-social", "port-scan", "reddit-osint", "redirects",
+    "reverseip", "robots", "shodan", "smtp", "sociallinks", "social-recon",
+    "sqli", "ssl", "subdomain", "tech", "telegram-osint", "tor-check",
+    "username", "waf", "wayback", "whois", "xss",
+}
+
+
 def _build_tools_help():
     from tools import HELP_DESCRIPTIONS
     lines = []
@@ -39,43 +53,72 @@ def _build_tools_help():
             lines.append(f"    {name}: {desc}")
     return "\n".join(lines)
 
-SYSTEM_PROMPT_TPL = """You are Reconnor AI — an autonomous cybersecurity assistant built into the Reconnor hacking suite.
 
-Your purpose: help users with reconnaissance, OSINT, vulnerability scanning, and security testing by running tools and analyzing results in real time. You PLAN, EXECUTE, and ANALYZE — like a senior penetration tester.
+SYSTEM_PROMPT_TPL = """You are Reconnor AI, a cybersecurity research partner built into the Reconnor hacking suite.
+
+You help with recon, OSINT, vulnerability scanning, and security testing by running tools and analyzing ACTUAL results.
 
 === TOOL EXECUTION ===
-When you want to run a tool, output a TOOL command on its own line:
+To run a tool, output TOOL: on its own line:
+TOOL: tool-name target
 
-TOOL: tool-name --arg1 value1 --arg2 value2
+Most tools just need the target (URL/domain/IP) as a positional argument. Do NOT add made-up arguments like --method, --path, --url-param, --data, etc.
 
-You can include text before and after TOOL commands. Multiple TOOL commands are OK — they will be run in sequence. If no tool is needed, just respond as a helpful assistant.
+For tools that need specific flags, use only these known patterns:
+  --target X  (for most tools that need a target)
+  --url X     (for ssrf, ssti, race, ws, xxe, brute, cred-spray, default-creds, graphql, smuggle)
+  --domain X  (for dork, takeover)
+  --token X   (for jwt)
+  --hash X    (for hash-id)
+  --password X (for pass-analyze)
+  --input X   (for report)
 
-Examples:
-  TOOL: port-scan example.com --ports 22,80,443
-  TOOL: subdomain example.com
-  TOOL: whois example.com
-  TOOL: hash-id --hash 5d41402abc4b2a76b9719d911017c592
-  TOOL: tech https://example.com
-  TOOL: dns example.com --recursive
+=== CRITICAL RULES ===
+1. NEVER describe findings from a tool before it has run. Only say what you plan to do.
+2. After a tool runs, analyze the ACTUAL results. If the tool errors, report the error honestly.
+3. Output at most ONE TOOL command per response. After the tool runs and results are analyzed, the system returns control to the user. You must wait for the user to respond before running another tool.
+4. Do NOT invent arguments. Only use the argument patterns listed above.
+5. If a tool fails, try a simpler invocation: just TOOL: tool-name target.
+6. If you have a plan with multiple steps, explain the full plan in text, then execute the first step with ONE TOOL command. The conversation history will remember the remaining steps.
 
 === AVAILABLE TOOLS ===
 {TOOLS_PLACEHOLDER}
-
-=== GUIDELINES ===
-1. Understand the user's goal first, then plan which tools to run and in what order
-2. Run tools ONE AT A TIME. After each tool, analyze results before deciding the next step
-3. ALWAYS explain your reasoning before running a tool ("Let me check...")
-4. After getting results, summarize key findings and suggest what to do next
-5. Chain tools logically: recon (whois/dns) -> port scan -> web tech -> vulnerability scan
-6. For URL targets, include http:// or https:// prefix
-7. Be professional, concise, and security-focused
-8. If the user asks a question that doesn't need a tool, just answer it directly
-9. CRITICAL: When a tool returns errors or empty results, adapt your plan — don't keep running failing tools
-10. After 3-4 tool runs, ask the user if they want to continue or change direction
 """
+
 
 def _get_system_prompt():
     return SYSTEM_PROMPT_TPL.replace("{TOOLS_PLACEHOLDER}", _build_tools_help())
+
+
+class Spinner:
+    def __init__(self):
+        self._spin_chars = "|/-\\"
+        self._idx = 0
+        self._running = False
+        self._thread = None
+
+    def _spin(self):
+        while self._running:
+            sys.stdout.write(f"\r  \033[93m[{self._spin_chars[self._idx % len(self._spin_chars)]}]\033[0m thinking...")
+            sys.stdout.flush()
+            self._idx += 1
+            time.sleep(0.12)
+
+    def start(self):
+        if utils.output.QUIET:
+            return
+        self._running = True
+        self._thread = threading.Thread(target=self._spin, daemon=True)
+        self._thread.start()
+
+    def stop(self):
+        if not self._running:
+            return
+        self._running = False
+        if self._thread:
+            self._thread.join(timeout=1)
+        sys.stdout.write("\r" + " " * 40 + "\r")
+        sys.stdout.flush()
 
 
 class AIChat:
@@ -100,11 +143,12 @@ class AIChat:
                 pass
 
         if prompt:
-            result_text = ai._process_single(prompt, llm)
-            return {"result": result_text}
-        else:
-            ai._interactive_loop(llm)
-            return {"result": "interactive session ended"}
+            ai.conversation.append({"role": "user", "content": prompt})
+            print()
+            ai._converse(llm)
+
+        ai._interactive_loop(llm)
+        return {"result": "interactive session ended"}
 
     def __init__(self):
         self.conversation = []
@@ -117,24 +161,10 @@ class AIChat:
             for m in messages
         )
 
-    def _process_single(self, prompt, llm):
-        self.conversation.append({"role": "user", "content": prompt})
-        self._converse(llm)
-        # Return the last assistant response
-        for msg in reversed(self.conversation):
-            if msg["role"] == "assistant":
-                text = msg["content"]
-                # Strip tool commands from the response text
-                lines = [l for l in text.split("\n") if not re.match(r"^TOOL:\s", l.strip(), re.IGNORECASE)]
-                return "\n".join(lines).strip()
-        return None
-
     def _interactive_loop(self, llm):
         print()
-        print(f"  {'=' * 56}")
-        print(f"  \033[96mReconnor AI Chat\033[0m — autonomous security testing assistant")
-        print(f"  Type \033[93mexit\033[0m or \033[93mquit\033[0m to end  |  \033[93mhelp\033[0m for commands")
-        print(f"  {'=' * 56}")
+        print(f"  \033[96mReconnor AI Chat\033[0m")
+        print(f"  Type \033[93mexit\033[0m to end  |  \033[93mhelp\033[0m for commands")
         print()
 
         while True:
@@ -162,7 +192,7 @@ class AIChat:
 
             if cmd == "clear":
                 self.conversation = []
-                print("  \033[92m[+] Conversation cleared\033[0m")
+                print("  \033[92mConversation cleared\033[0m")
                 continue
 
             if cmd == "history":
@@ -178,7 +208,7 @@ class AIChat:
                 )
                 with open(path, "w") as f:
                     json.dump(self.conversation, f, indent=2)
-                print(f"  \033[92m[+] Saved to {path}\033[0m")
+                print(f"  \033[92mSaved to {path}\033[0m")
                 continue
 
             if cmd == "model":
@@ -197,22 +227,25 @@ class AIChat:
             self.conversation.append({"role": "user", "content": user_input})
             self._converse(llm)
 
-    def _converse(self, llm):
-        context = self._build_context()
-
-        self._show_thinking()
-        response = llm.chat(context, system=_get_system_prompt(), temperature=0.3, max_tokens=2048)
-
-        if not response:
-            error("AI returned no response")
-            return None
-
-        self._process_response(response, llm, max_depth=6)
+    def _call_llm(self, llm):
+        spinner = Spinner()
+        spinner.start()
+        response = llm.chat(
+            self._build_context(),
+            system=_get_system_prompt(),
+            temperature=0.3,
+            max_tokens=2048,
+        )
+        spinner.stop()
         return response
 
-    def _process_response(self, response, llm, max_depth=6):
-        if max_depth <= 0:
-            return
+    def _converse(self, llm):
+        response = self._call_llm(llm)
+
+        if not response or not response.strip():
+            error("AI returned no response")
+            self.conversation.append({"role": "user", "content": "Please continue with your analysis."})
+            return self._converse(llm)
 
         text_before, tool_commands = self._extract_tools(response)
         self.conversation.append({"role": "assistant", "content": response})
@@ -220,26 +253,39 @@ class AIChat:
         if text_before:
             self._show_response(text_before)
 
-        for cmd in tool_commands:
-            result_data = self._execute_tool(cmd)
-            if result_data is None:
-                continue
+        if not tool_commands:
+            return
 
-            summary = json.dumps(result_data, indent=2, default=str)[:3000]
-            followup = (
-                f"Tool executed: {cmd}\n\nResults:\n{summary}\n\n"
-                f"Analyze these results. What are the key findings? What should I do next?"
+        cmd = tool_commands[0]
+        result_data = self._execute_tool(cmd)
+        if result_data is None:
+            return
+
+        if result_data.get("error", "").startswith("Unknown tool:"):
+            unknown_tool = result_data["error"].replace("Unknown tool: ", "")
+            tools_list = ", ".join(
+                t for cat in CATEGORIES for t in cat[1]
             )
-            self.conversation.append({"role": "user", "content": followup})
-
-            context = self._build_context()
-            self._show_thinking()
-            next_response = llm.chat(
-                context, system=_get_system_prompt(), temperature=0.3, max_tokens=2048
+            msg = (
+                f"You tried to run '{unknown_tool}' which does not exist. "
+                f"Here are the available tools: {tools_list}. "
+                "Pick one from this list and try again."
             )
+            self.conversation.append({"role": "user", "content": msg})
+            self._show_response(msg)
+            return
 
-            if next_response:
-                self._process_response(next_response, llm, max_depth - 1)
+        summary = json.dumps(result_data, indent=2, default=str)[:2000]
+
+        self.conversation.append({
+            "role": "user",
+            "content": f"Tool executed: {cmd}\n\nResults:\n{summary}\n\nAnalyze these results. What are the key findings? Then ask the user what they want to do next.",
+        })
+
+        next_response = self._call_llm(llm)
+        if next_response:
+            self.conversation.append({"role": "assistant", "content": next_response})
+            self._show_response(next_response)
 
     def _extract_tools(self, response):
         lines = response.split("\n")
@@ -253,18 +299,31 @@ class AIChat:
                 text_lines.append(line)
         return "\n".join(text_lines).strip(), tool_cmds
 
-    def _show_thinking(self):
-        if utils.output.QUIET:
-            return
-        print(f"  \033[93m{'=' * 56}\033[0m")
-        print(f"  \033[93m  🤔  Thinking...\033[0m")
-        print(f"  \033[93m{'=' * 56}\033[0m")
-        sys.stdout.flush()
-
     def _show_response(self, text):
         if utils.output.QUIET or not text:
             return
-        print(f"\n  \033[92m💬\033[0m {text}\n")
+        for line in text.strip().split("\n"):
+            print(f"  {line}")
+        print()
+
+    def _normalize_tool_args(self, tool_name, tool_args):
+        args = list(tool_args)
+        new_args = []
+        skip_next = False
+        for i, a in enumerate(args):
+            if skip_next:
+                skip_next = False
+                continue
+            if a == "--target" and i + 1 < len(args):
+                if tool_name in TOOLS_WITH_POSITIONAL_TARGET:
+                    new_args.insert(0, args[i + 1])
+                else:
+                    new_args.append(a)
+                    new_args.append(args[i + 1])
+                skip_next = True
+            else:
+                new_args.append(a)
+        return new_args
 
     def _execute_tool(self, cmd_line):
         cmd_line = cmd_line.strip()
@@ -284,6 +343,8 @@ class AIChat:
             error(f"Unknown tool: {tool_name}")
             return {"error": f"Unknown tool: {tool_name}"}
 
+        tool_args = self._normalize_tool_args(tool_name, tool_args)
+
         if "--json" not in tool_args:
             tool_args.append("--json")
 
@@ -291,9 +352,8 @@ class AIChat:
         main_py = os.path.join(project_root, "main.py")
         cmd = [sys.executable, main_py, tool_name] + tool_args
 
-        if not utils.output.QUIET:
-            print(f"\n  \033[96m🔧  Running {tool_name}...\033[0m")
-            sys.stdout.flush()
+        print(f"  \033[96m[{tool_name}]\033[0m running...")
+        sys.stdout.flush()
 
         try:
             proc = subprocess.Popen(
@@ -305,12 +365,13 @@ class AIChat:
             )
 
             stderr_lines = []
+
             def _read_stderr():
                 for line in iter(proc.stderr.readline, ""):
                     stderr_lines.append(line)
                     stripped = line.strip()
-                    if not utils.output.QUIET and stripped and not stripped.startswith("{"):
-                        print(f"    \033[90m{stripped}\033[0m")
+                    if stripped and not stripped.startswith("{"):
+                        print(f"  \033[90m{stripped}\033[0m")
             stderr_thread = threading.Thread(target=_read_stderr, daemon=True)
             stderr_thread.start()
 
@@ -324,7 +385,21 @@ class AIChat:
             stdout = "".join(stdout_chunks).strip()
 
             if proc.returncode != 0:
-                error(f"Tool exited with code {proc.returncode}")
+                stderr_text = "".join(stderr_lines)
+                if "unrecognized arguments" in stderr_text:
+                    bad_args = self._extract_unrecognized_args(stderr_text)
+                    if bad_args:
+                        remaining = [a for a in tool_args if a not in bad_args]
+                        for b in bad_args:
+                            try:
+                                idx = remaining.index(b)
+                                remaining.pop(idx)
+                                if idx < len(remaining):
+                                    remaining.pop(idx)
+                            except ValueError:
+                                pass
+                        if remaining != tool_args:
+                            return self._execute_tool_raw(tool_name, remaining)
                 return {"error": f"exit code {proc.returncode}"}
 
             if not stdout:
@@ -340,7 +415,6 @@ class AIChat:
                         return json.loads(json_match.group())
                     except:
                         pass
-                warning(f"Non-JSON output from {tool_name}")
                 return {"raw_output": stdout[:500]}
 
         except FileNotFoundError:
@@ -348,4 +422,44 @@ class AIChat:
             return {"error": "main.py not found"}
         except Exception as e:
             error(f"Error: {e}")
+            return {"error": str(e)}
+
+    def _extract_unrecognized_args(self, stderr_text):
+        m = re.search(r"unrecognized arguments:\s*(.+)", stderr_text)
+        if not m:
+            return []
+        parts = m.group(1).strip().split()
+        result = []
+        i = 0
+        while i < len(parts):
+            p = parts[i].strip("'\"")
+            if p.startswith("-"):
+                result.append(p)
+                if i + 1 < len(parts) and not parts[i + 1].startswith("-"):
+                    result.append(parts[i + 1].strip("'\""))
+                    i += 2
+                else:
+                    i += 1
+            else:
+                i += 1
+        return result
+
+    def _execute_tool_raw(self, tool_name, tool_args):
+        if "--json" not in tool_args:
+            tool_args.append("--json")
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        main_py = os.path.join(project_root, "main.py")
+        cmd = [sys.executable, main_py, tool_name] + tool_args
+        try:
+            proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1)
+            stdout, stderr = proc.communicate()
+            if proc.returncode != 0:
+                return {"error": f"exit code {proc.returncode}"}
+            if not stdout:
+                return {"error": "no output"}
+            try:
+                return json.loads(stdout)
+            except json.JSONDecodeError:
+                return {"raw_output": stdout[:500]}
+        except Exception as e:
             return {"error": str(e)}

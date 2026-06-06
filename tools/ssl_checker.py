@@ -16,9 +16,17 @@ def get_certificate_info(host, port=443, timeout=10):
         ssock = ctx.wrap_socket(sock, server_hostname=host)
         cert = ssock.getpeercert()
         ssock.close()
-        return cert
+        return cert, None
+    except socket.timeout:
+        return None, f"Connection to {host}:{port} timed out after {timeout}s"
+    except socket.gaierror:
+        return None, f"Could not resolve hostname: {host}"
+    except ConnectionRefusedError:
+        return None, f"Connection refused to {host}:{port}"
+    except ssl.SSLError as e:
+        return None, f"SSL error: {e}"
     except Exception as e:
-        return None
+        return None, f"Error: {e}"
 
 
 class SSLChecker:
@@ -47,11 +55,13 @@ class SSLChecker:
             if unsupported:
                 info(f"Unsupported: {', '.join(unsupported)}")
 
-        cert = get_certificate_info(target, port)
+        cert, cert_error = get_certificate_info(target, port)
 
         if not cert:
             error(f"Could not retrieve certificate for {target}:{port}")
-            return {"target": target, "error": "No certificate retrieved"}
+            if cert_error:
+                info(f"Reason: {cert_error}")
+            return {"target": target, "error": cert_error or "No certificate retrieved"}
 
         if not ext:
             info("Certificate Information:")

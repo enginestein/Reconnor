@@ -92,7 +92,7 @@ class RaceCondition:
             }
             result_data["tests"].append(test_result)
 
-            # Detect race: if all succeeded, window may exist
+            # if all succeeded, window may exist
             if success_count >= threads * 0.9:
                 info(f"All {success_count}/{threads} succeeded — potential race window")
             elif success_count > 1 and success_count < threads * 0.5:

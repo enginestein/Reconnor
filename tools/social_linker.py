@@ -59,7 +59,9 @@ SOCIAL_PATTERNS = {
     ],
     "Telegram": [
         r"t\.me/[a-zA-Z0-9_]+",
+        r"t\.me/\+[a-zA-Z0-9_-]+",
         r"telegram\.me/[a-zA-Z0-9_]+",
+        r"telegram\.me/joinchat/[a-zA-Z0-9_-]+",
         r"telegram\.dog/[a-zA-Z0-9_]+",
     ],
     "WhatsApp": [
@@ -155,6 +157,30 @@ SOCIAL_PATTERNS = {
     "Blogger": [
         r"[a-zA-Z0-9_-]+\.blogspot\.com",
     ],
+    "Mastodon": [
+        r"[a-zA-Z0-9.-]+\.mastodon\.\w+/@[a-zA-Z0-9_]+",
+        r"mastodon\.social/@[a-zA-Z0-9_]+",
+        r"mastodon\.online/@[a-zA-Z0-9_]+",
+        r"mastodon\.cloud/@[a-zA-Z0-9_]+",
+    ],
+    "Bluesky": [
+        r"bsky\.app/profile/[a-zA-Z0-9_.-]+",
+    ],
+    "Threads": [
+        r"threads\.net/@[a-zA-Z0-9_.-]+",
+    ],
+    "WeChat": [
+        r"weixin\.qq\.com",
+        r"wechat\.com",
+    ],
+    "Signal": [
+        r"signal\.me/[a-zA-Z0-9]+",
+        r"signal\.team/[a-zA-Z0-9]+",
+    ],
+    "Element/Matrix": [
+        r"matrix\.to/#/@[a-zA-Z0-9_.-]+:[a-zA-Z0-9.-]+",
+        r"element\.io",
+    ],
 }
 
 
@@ -191,6 +217,19 @@ class SocialLinker:
                         url = "https://" + match
                         found_links.append((platform, url))
 
+        emails = set(re.findall(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', html))
+        email_links = [e for e in emails if not e.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.svg', '.css', '.js'))]
+
+        phone_patterns = [
+            r'\+\d{1,3}[-\s]?\(?\d{1,4}\)?[-\s]?\d{1,4}[-\s]?\d{1,4}[-\s]?\d{1,4}',
+            r'0\d[-\s]?\d{4}[-\s]?\d{4}',
+            r'\b\d{3}[-.]?\d{3}[-.]?\d{4}\b',
+        ]
+        phones = set()
+        for pp in phone_patterns:
+            for m in re.findall(pp, html):
+                phones.add(m.strip())
+
         if found_links:
             found_links.sort(key=lambda x: x[0])
             section(f"Found {len(found_links)} social media/contact link(s)")
@@ -198,6 +237,52 @@ class SocialLinker:
                 result(platform, url)
         else:
             warning("No social media links found on the page")
+
+        if full_scan and found_links:
+            section("Link Health Check")
+            for platform, url in found_links[:20]:
+                try:
+                    hr = requests.head(url, timeout=5, allow_redirects=True,
+                        headers={"User-Agent": "Mozilla/5.0"})
+                    status = hr.status_code
+                    if status < 400:
+                        success(f"  {platform}: {url} -> HTTP {status}")
+                    else:
+                        warning(f"  {platform}: {url} -> HTTP {status}")
+                except Exception:
+                    error(f"  {platform}: {url} -> UNREACHABLE")
+
+        title = ""
+        og_title = ""
+        og_desc = ""
+        m_title = re.search(r'<title[^>]*>([^<]+)</title>', html, re.I)
+        if m_title:
+            title = m_title.group(1).strip()
+        m_og_title = re.search(r'<meta[^>]+property=["\']og:title["\'][^>]+content=["\']([^"\']+)["\']', html, re.I)
+        if m_og_title:
+            og_title = m_og_title.group(1).strip()
+        m_og_desc = re.search(r'<meta[^>]+property=["\']og:description["\'][^>]+content=["\']([^"\']+)["\']', html, re.I)
+        if m_og_desc:
+            og_desc = m_og_desc.group(1).strip()
+
+        section("Page Metadata")
+        result("Title", title[:100] if title else "N/A")
+        result("OG Title", og_title[:100] if og_title else "N/A")
+        result("OG Description", og_desc[:200] if og_desc else "N/A")
+
+        if email_links:
+            section(f"Emails Found ({len(email_links)})")
+            for e in list(email_links)[:20]:
+                result("Email", e)
+        else:
+            info("No emails found")
+
+        if phones:
+            section(f"Phone Numbers Found ({len(phones)})")
+            for p in list(phones)[:10]:
+                result("Phone", p)
+        else:
+            info("No phone numbers found")
 
         platform_count = {}
         for platform, _ in found_links:
@@ -208,4 +293,12 @@ class SocialLinker:
             for platform, count in sorted(platform_count.items(), key=lambda x: -x[1]):
                 result(platform, str(count))
 
-        return {"target": target, "links": found_links}
+        return {
+            "target": target,
+            "links": found_links,
+            "emails": list(email_links),
+            "phones": list(phones),
+            "title": title,
+            "og_title": og_title,
+            "og_description": og_desc,
+        }

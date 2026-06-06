@@ -90,7 +90,7 @@ class XXEScanner:
             for p in XXEScanner.PAYLOADS:
                 payload = p["payload"]
                 if p["name"] == "UTF-16 BOM":
-                    payload = '<?xml version="1.0"?>'.encode("utf-16") + b'<!DOCTYPE foo [<!ENTITY xxe SYSTEM "file:///etc/passwd">]><root>&xxe;</root>'.encode("utf-16")
+                    payload = '<?xml version="1.0"?>'.encode("utf-16") + '<!DOCTYPE foo [<!ENTITY xxe SYSTEM "file:///etc/passwd">]><root>&xxe;</root>'.encode("utf-16")
 
                 if file_read:
                     payload_str = payload.decode("utf-16") if isinstance(payload, bytes) else payload

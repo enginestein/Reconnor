@@ -70,24 +70,49 @@ class EmailRecon:
         prefix = sha1_hash[:5]
         suffix = sha1_hash[5:]
 
-        try:
-            resp = requests.get(f"{HIBP_API}{prefix}", timeout=timeout,
-                headers={"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:120.0) Gecko/20100101 Firefox/120.0"})
-            if resp.status_code == 200:
-                hashes = resp.text.split("\r\n")
-                matched = [h for h in hashes if h.startswith(suffix)]
-                if matched:
-                    count = int(matched[0].split(":")[1])
-                    warning(f"Email found in {count} breach(es) via HIBP!")
-                    results["breach"].append({"source": "HIBP", "count": count, "message": f"Pwned in {count} breach(es)"})
+        import time
+        max_retries = 5
+        retry_delay = 1
+        hibp_success = False
+        for attempt in range(max_retries):
+            try:
+                resp = requests.get(f"{HIBP_API}{prefix}", timeout=timeout,
+                    headers={"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:120.0) Gecko/20100101 Firefox/120.0"})
+                if resp.status_code == 200:
+                    hibp_success = True
+                    hashes = resp.text.split("\r\n")
+                    matched = [h for h in hashes if h.startswith(suffix)]
+                    if matched:
+                        count = int(matched[0].split(":")[1])
+                        warning(f"Email found in {count} breach(es) via HIBP!")
+                        results["breach"].append({"source": "HIBP", "count": count, "message": f"Pwned in {count} breach(es)"})
+                    else:
+                        success("No breaches found in HIBP database (good)")
+                    break
+                elif resp.status_code == 429:
+                    if attempt < max_retries - 1:
+                        warning(f"HIBP rate limited (429), retrying in {retry_delay}s... (attempt {attempt + 1}/{max_retries})")
+                        time.sleep(retry_delay)
+                        retry_delay *= 2
+                    else:
+                        warning(f"HIBP rate limited — gave up after {max_retries} retries")
                 else:
-                    success("No breaches found in HIBP database (good)")
-            elif resp.status_code == 429:
-                warning("HIBP rate limited — try again later")
-            else:
-                info(f"HIBP returned HTTP {resp.status_code}")
-        except Exception as e:
-            info(f"HIBP check failed: {e}")
+                    info(f"HIBP returned HTTP {resp.status_code}")
+                    break
+            except requests.exceptions.ConnectionError as e:
+                if attempt < max_retries - 1:
+                    warning(f"HIBP connection error, retrying in {retry_delay}s... (attempt {attempt + 1}/{max_retries})")
+                    time.sleep(retry_delay)
+                    retry_delay *= 2
+                else:
+                    info(f"HIBP connection failed after {max_retries} retries: {e}")
+                    break
+            except Exception as e:
+                info(f"HIBP check failed: {e}")
+                break
+
+        if not hibp_success and not results["breach"]:
+            info("HIBP breach check did not complete successfully")
 
         section("Phase 3: Social Media Account Discovery")
         info(f"Searching {len(SOCIAL_PLATFORMS)} platforms for username '{username}'...")
