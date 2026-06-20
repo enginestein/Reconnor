@@ -32,8 +32,11 @@ from tools.xss_scanner import AdvancedXSSScanner as XSSScanner
 from tools.admin_finder import AdvancedAdminFinder as AdminFinder
 from tools.openredirect import AdvancedOpenRedirectChecker as OpenRedirectChecker
 from tools.cloud_enum import CloudEnum
+from tools.crlf_injection import CRLFInjection
+from tools.command_injection import CommandInjection
 from tools.smtp_enum import SMTPEnum
 from tools.email_finder import EmailFinder
+from tools.email_security import EmailSecurity
 from tools.email_recon import EmailRecon
 from tools.phone_info import PhoneInfo
 from tools.phone_social import PhoneSocial
@@ -74,6 +77,13 @@ from tools.cred_spray import CredSpray
 from tools.default_creds import DefaultCreds
 from tools.password_analyze import PasswordAnalyze
 from tools.hash_id import HashID
+from tools.host_header_injection import HostHeaderInjection
+from tools.insecure_deserialization import InsecureDeserialization
+from tools.lfi_rfi_scanner import LFIRFIScanner
+from tools.nosql_injection import NoSQLInjection
+from tools.prototype_pollution import PrototypePollution
+from tools.web_screenshot import WebScreenshot
+from tools.wordlist_generator import WordlistGenerator
 from tools.aws_enum import AWSEnum
 from tools.k8s_audit import K8sAudit
 from tools.container_scan import ContainerScan
@@ -116,9 +126,12 @@ TOOLS = {
     "admin": AdminFinder,
     "openredirect": OpenRedirectChecker,
     "cloud": CloudEnum,
+    "cmd-injection": CommandInjection,
+    "crlf-injection": CRLFInjection,
     "smtp": SMTPEnum,
     "email-finder": EmailFinder,
     "email-recon": EmailRecon,
+    "email-security": EmailSecurity,
     "phone-info": PhoneInfo,
     "phone-social": PhoneSocial,
     "tor-check": TorCheck,
@@ -147,7 +160,9 @@ TOOLS = {
     "smuggle": Smuggler,
     "ws": WebSocketTester,
     "race": RaceCondition,
+    "lfi-rfi": LFIRFIScanner,
     "ssti": SSTIScanner,
+    "nosqli": NoSQLInjection,
     "xxe": XXEScanner,
     "net-scan": NetworkScan,
     "snmp": SNMPEnum,
@@ -157,13 +172,18 @@ TOOLS = {
     "rpc": RPCEnum,
     "cred-spray": CredSpray,
     "default-creds": DefaultCreds,
+    "deserialize": InsecureDeserialization,
     "pass-analyze": PasswordAnalyze,
     "hash-id": HashID,
+    "host-header-injection": HostHeaderInjection,
     "aws-enum": AWSEnum,
     "k8s": K8sAudit,
     "container": ContainerScan,
     "cloud-meta": CloudMetadata,
     "project": ProjectDB,
+    "proto-pollution": PrototypePollution,
+    "screenshot": WebScreenshot,
+    "wordlist": WordlistGenerator,
     "ai-chat": AIChat,
 }
 
@@ -202,9 +222,12 @@ HELP_DESCRIPTIONS = {
     "admin": "Advanced admin finder (CMS detection, fuzzy matching, login form analysis, 250+ paths)",
     "openredirect": "Advanced open redirect scanner (validation bypass, JS/DOM discovery, CRLF, param pollution)",
     "cloud": "Enumerate cloud storage and hosting services",
+    "cmd-injection": "Command injection vulnerability scanner with time-based and blind detection",
+    "crlf-injection": "CRLF (HTTP Response Splitting) injection scanner",
     "smtp": "SMTP server enumeration and email validation",
     "email-finder": "Find email addresses from domain (scraping, pattern guessing, search engines)",
     "email-recon": "Full email intelligence (breach check, social media, search footprint, Gravatar)",
+    "email-security": "Email security analyzer: SPF, DKIM, DMARC, MX, and security scoring",
     "phone-info": "Phone number intelligence (country, carrier, line type, location, reputation)",
     "phone-social": "Find social media and messaging accounts linked to a phone number",
     "tor-check": "Tor/dark web reconnaissance (.onion mirrors, exit nodes, dark web search)",
@@ -222,7 +245,6 @@ HELP_DESCRIPTIONS = {
     "reddit-osint": "Reddit OSINT: user profile analysis, subreddit recon, content tracking, cross-post detection",
     "social-recon": "Cross-platform social media recon: 60+ platforms, profile discovery, metadata extraction, correlation",
     "auto-recon": "Autonomous recon orchestration with AI-driven decision making and chained tool execution",
-
     "jwt": "JWT analysis and attack toolkit (decode, crack, algorithm confusion, KID injection)",
     "ssrf": "Blind and reflected SSRF detection with out-of-band verification and cloud metadata probing",
     "takeover": "Subdomain takeover detection (AWS, Azure, GitHub, Heroku, Netlify, 20+ services)",
@@ -233,7 +255,9 @@ HELP_DESCRIPTIONS = {
     "smuggle": "HTTP request smuggler: CL.TE, TE.CL, TE.TE detection and exploitation",
     "ws": "WebSocket security tester: origin bypass, message fuzzing, DoS resistance",
     "race": "Race condition tester: concurrent request racing for discount, OTP, rate-limit bypass",
+    "lfi-rfi": "Local File Inclusion and Remote File Inclusion vulnerability scanner",
     "ssti": "SSTI scanner: Jinja2, Twig, Freemarker, Velocity, Jade, ERB, Tornado, Mako, Smarty",
+    "nosqli": "NoSQL injection vulnerability scanner for MongoDB and other NoSQL databases",
     "xxe": "XXE scanner: file read, SSRF, blind exfiltration, 9 DOCTYPE variants including XInclude and SVG",
     "net-scan": "Network scanner: ARP discovery, ping sweep, OS fingerprinting, port scanning",
     "snmp": "SNMP enumerator: community string brute force, MIB tree walk, interface/user extraction",
@@ -243,12 +267,17 @@ HELP_DESCRIPTIONS = {
     "rpc": "RPC enumerator: endpoint mapper dump, service discovery, unusual port detection",
     "cred-spray": "Credential sprayer: password spraying with anti-lockout detection and cooldown",
     "default-creds": "Default credential checker: 500+ known device/service defaults",
+    "deserialize": "Insecure deserialization scanner for PHP, Python, Java, Ruby, .NET",
     "pass-analyze": "Password strength analyzer: entropy, patterns, crack time estimation",
     "hash-id": "Hash identifier and cracker: 50+ hash types, wordlist/rainbow table cracking",
+    "host-header-injection": "Host header injection scanner: cache poisoning, password reset poisoning, SSRF",
     "aws-enum": "AWS enumeration: IAM/S3/EC2/STS checks, bucket discovery, metadata probing",
     "k8s": "Kubernetes security audit: RBAC, dashboard, etcd, kubelet, API server, pod/secret exposure",
     "container": "Container security scanner: Docker API, breakout tests, image vulnerability check",
     "cloud-meta": "Cloud metadata exposure scanner: AWS, Azure, GCP, Alibaba, DigitalOcean, OpenStack",
     "project": "Project database: SQLite-backed target/project management with scan comparison",
+    "proto-pollution": "Server-side prototype pollution scanner for Node.js applications",
+    "screenshot": "Take full-page screenshots of websites using Playwright",
+    "wordlist": "Custom wordlist generator from target website content and AI patterns",
     "ai-chat": "Interactive AI chat that runs recon/scanning tools autonomously using natural language",
 }

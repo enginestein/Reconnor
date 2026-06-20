@@ -255,6 +255,46 @@ class LLMHelper:
         resp = self._call(prompt, system="Summarize findings, highlight critical services, suggest next recon steps.")
         return resp
 
+    def generate_lfi_payloads(self, target, tech_stack=None):
+        prompt = f"Generate 20 LFI/RFI payloads for {target}. Tech: {tech_stack}. Include path traversal, PHP wrappers, RFI, null byte, /proc/self. Return one per line."
+        resp = self._call(prompt, system="You are a web security testing assistant. Return only payloads, one per line.")
+        return self._parse_list(resp) if resp else []
+
+    def generate_cmd_injection_payloads(self, param_name, tech_stack=None):
+        prompt = f"Generate 15 command injection payloads for parameter '{param_name}' on {tech_stack}. Include semicolon, pipe, subshell, blind time-based, OOB, WAF bypass. Return one per line."
+        resp = self._call(prompt, system="You are a web security testing assistant. Return only payloads, one per line.")
+        return self._parse_list(resp) if resp else []
+
+    def generate_nosql_payloads(self, param_name, db_type="mongodb"):
+        prompt = f"Generate 12 NoSQL injection payloads for {db_type} parameter '{param_name}'. Include $ne, $gt, $regex, $where, JSON injection. Return one per line."
+        resp = self._call(prompt, system="You are a web security testing assistant. Return only payloads, one per line.")
+        return self._parse_list(resp) if resp else []
+
+    def generate_host_header_payloads(self, domain):
+        prompt = f"Generate 12 Host header injection payloads for {domain}. Include different domain, XFH, port injection, CRLF, absolute URL. Return one per line."
+        resp = self._call(prompt, system="You are a web security testing assistant. Return only host header values, one per line.")
+        return self._parse_list(resp) if resp else []
+
+    def generate_crlf_payloads(self, context_hint="parameter"):
+        prompt = f"Generate 12 CRLF injection payloads for {context_hint} context. Include %0d%0a, %0a, double encoding, unicode, XSS via CRLF. Return one per line."
+        resp = self._call(prompt, system="You are a web security testing assistant. Return only payloads, one per line.")
+        return self._parse_list(resp) if resp else []
+
+    def generate_prototype_pollution_payloads(self, framework="express"):
+        prompt = f"Generate 10 server-side prototype pollution payloads for Node.js/{framework}. Include __proto__, constructor.prototype, JSON body, query string, header vectors. Return one per line."
+        resp = self._call(prompt, system="You are a web security testing assistant. Return only payloads, one per line.")
+        return self._parse_list(resp) if resp else []
+
+    def generate_deserialization_payloads(self, language="php"):
+        prompt = f"Generate 12 insecure deserialization payload snippets for {language}. Include PHP serialized objects, Python pickle, Java gadgets, Ruby YAML, .NET PS. Return one per line."
+        resp = self._call(prompt, system="You are a web security testing assistant. Return only payloads, one per line.")
+        return self._parse_list(resp) if resp else []
+
+    def generate_wordlist_entries(self, target, tech_stack=None, page_content=None):
+        prompt = f"Generate 30 wordlist entries for {target}. Tech: {tech_stack}. Content: {page_content[:1000] if page_content else 'N/A'}. Include paths, params, endpoints, filenames, subdomains. Return one word per line."
+        resp = self._call(prompt, system="You are a web security testing assistant. Return only single words, one per line.")
+        return self._parse_list(resp) if resp else []
+
     def analyze_shodan_host(self, host_data):
         prompt = f"Analyze this Shodan host data:\n{json.dumps(host_data, indent=2)}"
         resp = self._call(prompt, system="Summarize open ports, services, vulnerabilities, and security posture.")

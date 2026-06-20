@@ -80,6 +80,7 @@ For tools that need specific flags, use only these known patterns:
 4. Do NOT invent arguments. Only use the argument patterns listed above.
 5. If a tool fails, try a simpler invocation: just TOOL: tool-name target.
 6. If you have a plan with multiple steps, explain the full plan in text, then execute the first step with ONE TOOL command. The conversation history will remember the remaining steps.
+7. After all planned steps are done or when the user asks for a review, provide a comprehensive conclusion summarizing ALL findings, their risk levels, and actionable recommendations.
 
 === AVAILABLE TOOLS ===
 {TOOLS_PLACEHOLDER}
@@ -125,8 +126,22 @@ class AIChat:
     description = "Interactive AI chat that runs recon/scanning tools autonomously"
 
     @staticmethod
-    def run(prompt="", model="", provider="", **kwargs):
+    def run(prompt="", model="", provider="", cli=False, **kwargs):
         llm = LLMHelper(provider=provider, model=model)
+        os.makedirs(os.path.expanduser("~/.reconnor"), exist_ok=True)
+
+        if not cli:
+            try:
+                from tools.ai_chat_tui import AIChatTUIApp
+            except ImportError:
+                error("Textual is required for TUI mode. Install: pip install textual")
+                return {"error": "textual not installed"}
+
+            ai = AIChat()
+            app = AIChatTUIApp(llm=llm, ai_instance=ai, prompt=prompt)
+            app.run()
+            return {"result": "tui session ended"}
+
         if not llm.available:
             provider_name = provider or os.environ.get("RECONNOR_LLM", "ollama")
             error(f"No LLM backend available for '{provider_name}'")
@@ -134,8 +149,6 @@ class AIChat:
             return {"error": f"No LLM backend available for '{provider_name}'"}
 
         ai = AIChat()
-        os.makedirs(os.path.expanduser("~/.reconnor"), exist_ok=True)
-
         if HAS_READLINE and os.path.exists(HISTORY_FILE):
             try:
                 readline.read_history_file(HISTORY_FILE)

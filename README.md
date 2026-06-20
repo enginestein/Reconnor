@@ -1,16 +1,16 @@
+```
+                             ▗▄▄▖ ▗▄▄▄▖ ▗▄▄▖ ▗▄▖ ▗▖  ▗▖▗▖  ▗▖ ▗▄▖ ▗▄▄▖ 
+                             ▐▌ ▐▌▐▌   ▐▌   ▐▌ ▐▌▐▛▚▖▐▌▐▛▚▖▐▌▐▌ ▐▌▐▌ ▐▌
+                             ▐▛▀▚▖▐▛▀▀▘▐▌   ▐▌ ▐▌▐▌ ▝▜▌▐▌ ▝▜▌▐▌ ▐▌▐▛▀▚▖
+                             ▐▌ ▐▌▐▙▄▄▖▝▚▄▄▖▝▚▄▞▘▐▌  ▐▌▐▌  ▐▌▝▚▄▞▘▐▌ ▐▌
 
-    ____  ________________  _   ___   ______  ____
-   / __ \/ ____/ ____/ __ \/ | / / | / / __ \/ __ \
-  / /_/ / __/ / /   / / / /  |/ /  |/ / / / / /_/ /
- / _, _/ /___/ /___/ /_/ / /|  / /|  / /_/ / _, _/
-/_/ |_/_____/\____/\____/_/ |_/_/ |_/\____/_/ |_|
-
+```          
 
 > **WIP**
 
 ## Overview
 
-A comprehensive, custom-built suite of **82 security research and OSINT (Open Source Intelligence) tools** for educational purposes. All tools are standalone Python scripts with no external tool wrappers.
+A comprehensive, custom-built suite of **92 security research and OSINT (Open Source Intelligence) tools** for educational purposes. All tools are standalone Python scripts with no external tool wrappers.
 
 > **Optional external tools** (nmap, amass, ffuf, etc.) can be enabled per-tool via `--nmap`/`--ext` flags.  
 > Run `reconnor-setup` to auto-install all system dependencies, or `pip install .[ext]` for pip-based tools.
@@ -67,7 +67,7 @@ python3 main.py admin https://example.com --ollama-model llama3.2
 python3 main.py openredirect https://example.com --ollama-model llama3.2
 ```
 
-Tools with AI support: `fuzz`, `forms`, `admin`, `openredirect`, `sqli`, `xss`, `dir-bust`, `redirects`, `robots`, `shodan`, `js`, `auto-recon`, `ai-chat`
+Tools with AI support: `fuzz`, `forms`, `admin`, `openredirect`, `sqli`, `xss`, `dir-bust`, `redirects`, `robots`, `shodan`, `js`, `lfi-rfi`, `cmd-injection`, `nosqli`, `host-header-injection`, `crlf-injection`, `proto-pollution`, `deserialize`, `wordlist`, `auto-recon`, `ai-chat`
 
 ### Cloud LLMs
 ```bash
@@ -113,6 +113,8 @@ Tools to gather information about a target.
 | [phone-info](wiki/phone-info.md) | Phone number intelligence and carrier lookup |
 | [phone-social](wiki/phone-social.md) | Find social accounts linked to a phone number |
 | [tor-check](wiki/tor-check.md) | Tor/dark web reconnaissance |
+| [email-security](wiki/email-security.md) | Email security analyzer (SPF, DKIM, DMARC, MX, security scoring) |
+| [wordlist](wiki/wordlist.md) | Custom wordlist generator from website content and AI patterns |
 
 ### 1a. OSINT & Threat Intelligence
 Specialized OSINT tools for tracking threats, phishing, malware, and social platforms.
@@ -132,7 +134,7 @@ Intelligent agents and interactive AI helpers.
 | Tool | Description |
 |------|-------------|
 | [auto-recon](#auto-recon) | Autonomous recon orchestrator with AI-driven decision making |
-| [ai-chat](#ai-chat) | Autonomous AI assistant that runs 82 tools via natural language |
+| [ai-chat](wiki/ai-chat.md) | Autonomous AI assistant that runs 92 tools via natural language |
 
 ### 1c. Advanced Security Testing
 Specialized security testing tools.
@@ -172,6 +174,7 @@ Tools to analyze websites and web technologies.
 | [robots](wiki/robots.md) | Robots.txt and sitemap.xml recon analyzer |
 | [favicon](wiki/favicon.md) | Favicon hash calculator for Shodan |
 | [redirects](wiki/redirects.md) | HTTP redirect chain analyzer |
+| [screenshot](wiki/screenshot.md) | Full-page website screenshots using Playwright |
 
 ### 3. Web Security Testing
 Tools to identify security vulnerabilities.
@@ -187,6 +190,13 @@ Tools to identify security vulnerabilities.
 | [xss](wiki/xss.md) | XSS vulnerability scanner |
 | [admin](wiki/admin.md) | Admin panel finder |
 | [openredirect](wiki/openredirect.md) | Open redirect checker |
+| [lfi-rfi](wiki/lfi-rfi.md) | Local File Inclusion and Remote File Inclusion scanner |
+| [cmd-injection](wiki/cmd-injection.md) | Command injection vulnerability scanner |
+| [nosqli](wiki/nosqli.md) | NoSQL injection scanner (MongoDB, Redis, etc.) |
+| [host-header-injection](wiki/host-header-injection.md) | Host header injection scanner |
+| [crlf-injection](wiki/crlf-injection.md) | CRLF (HTTP Response Splitting) injection scanner |
+| [proto-pollution](wiki/proto-pollution.md) | Server-side prototype pollution scanner (Node.js) |
+| [deserialize](wiki/deserialize.md) | Insecure deserialization scanner (PHP, Python, Java, Ruby, .NET) |
 
 ### 4. Network & Infrastructure
 Tools for network-level scanning, enumeration, and protocol analysis.
@@ -960,6 +970,111 @@ Scans for XML External Entity injection with file read, SSRF, and blind exfiltra
 ```
 python3 main.py xxe https://example.com/xml --file-read /etc/passwd
 python3 main.py xxe https://example.com/upload --collaborator your.oob.provider
+```
+
+### lfi-rfi
+**Local File Inclusion and Remote File Inclusion scanner.**  
+Tests 50+ path traversal payloads including PHP wrappers, RFI inclusion, null byte injection, /proc/self/environ, and log poisoning. Detects file reads, PHP filter leaks, and remote code execution via data:// and expect:// wrappers.
+
+```
+python3 main.py lfi-rfi https://example.com/page?file=test
+python3 main.py lfi-rfi https://example.com --params file,page,path --ollama-model llama3.2
+python3 main.py lfi-rfi https://example.com/page --method POST --data "file=test"
+```
+
+### cmd-injection
+**Command injection vulnerability scanner.**  
+Tests 40+ command injection payloads including semicolon, pipe, subshell, backtick, and newline injection. Uses time-based detection (sleep/ping delays) and output-based verification for blind and reflected command execution.
+
+```
+python3 main.py cmd-injection https://example.com/ping?host=test
+python3 main.py cmd-injection https://example.com --params ip,host,domain --ollama-model llama3.2
+python3 main.py cmd-injection https://example.com/traceroute --method POST --data "target=test"
+```
+
+### nosqli
+**NoSQL injection scanner.**  
+Tests for MongoDB and NoSQL injection vulnerabilities using $ne, $gt, $regex, $where operators in both query strings and JSON body injection. Detects authentication bypass and data manipulation in NoSQL-backed applications.
+
+```
+python3 main.py nosqli https://example.com/login?username=admin
+python3 main.py nosqli https://example.com/api/login --method POST --data '{"username":"admin","password":"test"}'
+python3 main.py nosqli https://example.com/search?q=test --ollama-model llama3.2
+```
+
+### email-security
+**Email security analyzer.**  
+Checks SPF (Sender Policy Framework), DKIM (DomainKeys Identified Mail), and DMARC (Domain-based Message Authentication, Reporting & Conformance) DNS records. Computes an email security score (A-F grade) and identifies spoofing vulnerabilities.
+
+```
+python3 main.py email-security example.com
+python3 main.py email-security example.com --selector google
+```
+
+### host-header-injection
+**Host header injection scanner.**  
+Sends 15+ Host header tamper variants plus X-Forwarded-Host, X-Original-URL, and Forwarded header injections. Tests for cache poisoning, password reset poisoning, SSRF via host, and virtual host routing bypass.
+
+```
+python3 main.py host-header-injection https://example.com
+python3 main.py host-header-injection https://example.com --ollama-model llama3.2
+```
+
+### crlf-injection
+**CRLF (HTTP Response Splitting) injection scanner.**  
+Injects %0d%0a, %0a, %0d sequences in URL parameters and headers to test for HTTP response splitting. Detects Set-Cookie injection, Location header injection, cache poisoning, and XSS via CRLF.
+
+```
+python3 main.py crlf-injection https://example.com/page?file=test
+python3 main.py crlf-injection https://example.com --params file,url,next --ollama-model llama3.2
+```
+
+### proto-pollution
+**Server-side prototype pollution scanner.**  
+Tests Node.js applications for prototype pollution via __proto__ and constructor.prototype in JSON bodies, query strings, and custom headers. Detects admin bypass, property injection, and potential RCE vectors.
+
+```
+python3 main.py proto-pollution https://example.com/api/user
+python3 main.py proto-pollution https://example.com --method POST --ollama-model llama3.2
+```
+
+### deserialize
+**Insecure deserialization scanner.**  
+Tests PHP serialized objects (O:), Python pickle (cos), Java serialized streams (aced0005), Ruby YAML, and .NET PowerShell objects. Sends payloads across multiple Content-Type variants and detects deserialization errors and RCE indicators.
+
+```
+python3 main.py deserialize https://example.com/api/upload
+python3 main.py deserialize https://example.com --param data --ollama-model llama3.2
+```
+
+### screenshot
+**Website screenshot tool.**  
+Captures full-page screenshots using Playwright (headless Chromium). Configurable viewport size, full-page capture, and custom output directory. Falls back to HTTP status check if Playwright is not installed.
+
+```
+python3 main.py screenshot https://example.com
+python3 main.py screenshot https://example.com --output-dir reports --full-page
+python3 main.py screenshot https://example.com --width 1920 --height 1080
+```
+
+### wordlist
+**Custom wordlist generator.**  
+Scrapes target websites to extract words, URLs, paths, form fields, CSS classes, and JS endpoints. Applies leetspeak mutations and case variants. Optionally uses AI for target-specific word suggestions. Supports small/medium/large output sizes with configurable min/max length.
+
+```
+python3 main.py wordlist https://example.com --size large --mutation
+python3 main.py wordlist https://example.com --out custom.txt --depth 3
+python3 main.py wordlist https://example.com --min-len 4 --max-len 20 --ollama-model llama3.2
+```
+
+### ai-chat
+**Autonomous AI assistant that runs security tools via natural language.**  
+Interactive chat interface supporting OpenAI, Anthropic, Gemini, and Ollama providers. Can autonomously execute any of the 92 tools in the suite, chain multiple tools together, and summarize findings using natural language conversations.
+
+```
+python3 main.py ai-chat
+python3 main.py ai-chat --provider openai --model gpt-4o-mini
+python3 main.py ai-chat --provider anthropic --model claude-3-5-sonnet-20241022
 ```
 
 ---
